@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import sys
 
+from PyQt5.QtGui import QFont
+
 from qgmap.common import QGoogleMap
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
@@ -89,6 +91,9 @@ if __name__ == '__main__':
                               listMarker[i]["latitude"],
                               listMarker[i]["longitude"])
 
+
+
+
     app = QApplication(sys.argv)
     w = QDialog()
     h = QVBoxLayout()
@@ -111,13 +116,49 @@ if __name__ == '__main__':
     tab1.layout = QFormLayout()
     tab1.setLayout(tab1.layout)
 
+
+    def valuechange(self,label):
+        size = self.value()
+        label.setFont(QFont("Arial",size))
+
     addressEdit = QLineEdit()
-    gamma = QSpinBox()
-    tab1.layout.addWidget(gamma)
-    addressEdit.editingFinished.connect(goAddress)
+    titleNum = QLabel("Number of Agents:")
+    numOfAgents = QSlider(Qt.Horizontal)
+    numOfAgents.setMinimum(0)
+    numOfAgents.setMinimum(10)
+    #numOfAgents.valueChanged.connect(valuechange(titleNum))
+    tab1.layout.addWidget(titleNum)
+    tab1.layout.addWidget(numOfAgents)
     coordsEdit = QLineEdit()
-    tab1.layout.addRow('Coords:', coordsEdit)
+
+
     coordsEdit.editingFinished.connect(goCoords)
+    formContainer1 = QGroupBox("Weight Relative")
+    formLayout = QFormLayout()
+    formLayout.addRow(QLabel("δ:"), QSpinBox())
+    formLayout.addRow(QLabel("β:"), QSpinBox())
+    formContainer1.setLayout(formLayout)
+
+    formContainer2 = QGroupBox("Learning Rate")
+    formLayout1 = QFormLayout()
+    learningRate = QSpinBox()
+    learningRate.setMinimum(0)
+    learningRate.setMaximum(100)
+    formLayout1.addRow(QLabel("α:"), learningRate)
+    formContainer2.setLayout(formLayout1)
+
+    formContainer3 = QGroupBox("Discount Factor")
+    formLayout2 = QFormLayout()
+    discountFactor = QSpinBox()
+    discountFactor.setMinimum(0)
+    discountFactor.setMaximum(100)
+    formLayout2.addRow(QLabel("ϒ:"), discountFactor)
+    formContainer3.setLayout(formLayout2)
+
+    tab1.layout.addWidget(formContainer1)
+    tab1.layout.addWidget(formContainer2)
+    tab1.layout.addWidget(formContainer3)
+
 
     chart = QGraphicsView()
     layout1.addWidget(chart)
@@ -134,6 +175,9 @@ if __name__ == '__main__':
     ortherLayout.addWidget(btn1)
     ortherLayout.addWidget(btn2)
     ortherLayout.addWidget(btn3)
+
+
+
     mainLayout.addLayout(layout)
     mainLayout.addLayout(layout1)
 
@@ -156,8 +200,8 @@ if __name__ == '__main__':
     gmap.setSizePolicy(
         QSizePolicy.MinimumExpanding,
         QSizePolicy.MinimumExpanding)
-    w.showFullScreen()
-
+    #w.showFullScreen()
+    w.show()
     gmap.waitUntilReady()
 
     gmap.setZoom(15)
