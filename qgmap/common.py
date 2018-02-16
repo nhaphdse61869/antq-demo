@@ -195,9 +195,9 @@ class QGoogleMap(QWebEngineView):
             "); ".format(key))
 
     @trace
-    def directss(self, oLat, oLong, dLat, dLong):
+    def directss(self, listMarker):
         return self.runScript(
-            "calculateAndDisplayRoute({},{},{},{})".format(oLat, oLong, dLat, dLong))
+            "displayAllRout({})".format(listMarker))
 
     @QtCore.pyqtSlot(str, float, float)
     def markerMoved(self, key, lat, long):

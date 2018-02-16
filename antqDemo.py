@@ -84,12 +84,7 @@ if __name__ == '__main__':
 
     def showRoute():
         global listMarker
-        for i in range(len(listMarker)):
-            if i > 0:
-                gmap.directss(listMarker[i - 1]["latitude"],
-                              listMarker[i - 1]["longitude"],
-                              listMarker[i]["latitude"],
-                              listMarker[i]["longitude"])
+        gmap.directss(listMarker)
 
 
 

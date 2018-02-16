@@ -94,6 +94,35 @@ function calculateAndDisplayRoute(oLat, oLong, dLat, dLong) {
     });
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function displayAllRout(listCoords) {
+    var directionsService = new google.maps.DirectionsService;
+    for(var i = 0; i < listCoords.length-1; i++) {
+
+        var currentCoord = new google.maps.LatLng(listCoords[i].latitude, listCoords[i].longitude);
+        var nextCoord = new google.maps.LatLng(listCoords[i+1].latitude, listCoords[i+1].longitude);
+        directionsService.route({
+            origin: currentCoord,
+            destination: nextCoord,
+            travelMode: 'DRIVING'
+        }, function (response, status) {
+            if (status === 'OK') {
+            var directionsDisplay = new google.maps.DirectionsRenderer;
+            directionsDisplay.setMap(map);
+            directionsDisplay.setOptions({suppressMarkers: true});
+            directionsDisplay.setDirections(response);
+            } else {
+            window.alert('Directions request failed due to ' + status);
+            }
+        });
+        await sleep(1000);
+    }
+}
+
+
 function gmap_moveMarker(key, latitude, longitude) {
     var coords = new google.maps.LatLng(latitude, longitude);
     markers[key].setPosition(coords);
