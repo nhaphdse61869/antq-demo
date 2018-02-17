@@ -45,6 +45,29 @@ function gmap_setZoom(zoom) {
     map.setZoom(zoom);
 }
 
+function get_TimeDuration(origin, destination) {
+    var orgi = new google.maps.LatLng(origin.latitude, origin.longitude);
+    var di = new google.maps.LatLng(destination.latitude, destination.longitude);
+    var result = 0;
+    var service = new google.maps.DistanceMatrixService;
+    service.getDistanceMatrix({
+          origins: [orgi],
+          destinations: [di],
+          travelMode: 'DRIVING',
+          unitSystem: google.maps.UnitSystem.METRIC,
+          avoidHighways: false,
+          avoidTolls: false
+    }, function(response, status) {
+        if (status !== 'OK') {
+            alert('Error was: ' + status);
+        } else {
+             //var duration = response;
+            result = response.rows[0].elements[0].duration.value;
+        }
+    });
+    return result;
+}
+
 function gmap_addMarker(key, latitude, longitude, parameters) {
 
     if (key in markers) {
@@ -121,6 +144,8 @@ async function displayAllRout(listCoords) {
         await sleep(1000);
     }
 }
+
+
 
 
 function gmap_moveMarker(key, latitude, longitude) {
