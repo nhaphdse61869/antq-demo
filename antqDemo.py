@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import json
 import sys
 
 from PyQt5.QtGui import QFont
@@ -32,7 +33,15 @@ class OpenFileDialog(QWidget):
         fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
                                                   "All Files (*);;Python Files (*.py)", options=options)
         if fileName:
-            print(fileName)
+            data = json.load(open(fileName))
+            global listMarker, numMarker
+            for coord in data:
+                numMarker += 1
+                marker = {"latitude": coord['latitude'], "longitude": coord['longitude']}
+                listMarker.append(marker)
+                gmap.addMarker(str(numMarker), coord['latitude'], coord['longitude'], **dict(
+                    title="Move me!"
+                ))
 
     def openFileNamesDialog(self):
         options = QFileDialog.Options()

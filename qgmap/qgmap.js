@@ -141,7 +141,7 @@ async function displayAllRout(listCoords) {
             window.alert('Directions request failed due to ' + status);
             }
         });
-        await sleep(1000);
+        await sleep(125);
     }
 }
 
