@@ -3,11 +3,70 @@
 import json
 import sys
 
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QStandardItemModel
 
 from qgmap.common import QGoogleMap
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
+
+
+
+
+class ResultFrame(QWidget):
+    FROM, TO, TIME = range(3)
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.initUI()
+
+    def initUI(self):
+        self.setGeometry(1345, 0, 300, 680)
+        self.dataGroupBox = QGroupBox("Result")
+        self.dataView = QTreeView()
+        self.dataView.setRootIsDecorated(False)
+        self.dataView.setAlternatingRowColors(True)
+
+        dataLayout = QHBoxLayout()
+        dataLayout.addWidget(self.dataView)
+        self.dataGroupBox.setLayout(dataLayout)
+
+        model = self.createMailModel(self)
+        self.dataView.setModel(model)
+        self.addMail(model, 'A', 'B', '2h')
+        self.addMail(model, 'B', 'C', '30m')
+        self.addMail(model, 'C', 'D', '5m')
+
+        mainLayout = QVBoxLayout()
+        mainLayout.addWidget(self.dataGroupBox)
+        self.setLayout(mainLayout)
+
+    def createMailModel(self, parent):
+        model = QStandardItemModel(0, 3, parent)
+        model.setHeaderData(self.FROM, Qt.Horizontal, "From")
+        model.setHeaderData(self.TO, Qt.Horizontal, "To")
+        model.setHeaderData(self.TIME, Qt.Horizontal, "Time")
+        return model
+
+    def addMail(self, model, cofrom, to, time):
+        model.insertRow(0)
+        model.setData(model.index(0, self.FROM), cofrom)
+        model.setData(model.index(0, self.TO), to)
+        model.setData(model.index(0, self.TIME), time)
+
+    def moveRs(self):
+        old_pos = QRect(1345, 0, 300, 680)
+        new_pos = QRect(1060, 0, 300, 680)
+        if self.pos().x()==old_pos.x():
+            animation = QPropertyAnimation(self, b"geometry")
+            animation.setDuration(10000)
+            animation.setStartValue(QRect(1060, 0, 300, 680))
+            animation.setEndValue(QRect(1345, 0, 300, 680))
+            animation.start()
+        else:
+            animation = QPropertyAnimation(self, b"geometry")
+            animation.setDuration(10000)
+            animation.setStartValue(QRect(1345, 0, 300, 680))
+            animation.setEndValue(QRect(1060, 0, 300, 680))
+            animation.start()
 
 
 class OpenFileDialog(QWidget):
@@ -43,21 +102,6 @@ class OpenFileDialog(QWidget):
                     title="Move me!"
                 ))
 
-    def openFileNamesDialog(self):
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        files, _ = QFileDialog.getOpenFileNames(self, "QFileDialog.getOpenFileNames()", "",
-                                                "All Files (*);;Python Files (*.py)", options=options)
-        if files:
-            print(files)
-
-    def saveFileDialog(self):
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getSaveFileName(self, "QFileDialog.getSaveFileName()", "",
-                                                  "All Files (*);;Text Files (*.txt)", options=options)
-        if fileName:
-            print(fileName)
 
 if __name__ == '__main__':
 
@@ -147,14 +191,18 @@ if __name__ == '__main__':
     h = QVBoxLayout()
     mainLayout = QVBoxLayout(w)
     l = QFormLayout()
-    # l1 = QFormLayout()
     layout = QHBoxLayout()
-    layout1 = QHBoxLayout()
+    layout1 = QVBoxLayout()
 
-    btn = QPushButton("Show route")
-    btnS = QPushButton("Generate")
-    l.addWidget(btn)
-    l.addWidget(btnS)
+    tabs2 = QTabWidget()
+    tabGM = QWidget()
+    tabGraph = QWidget()
+    tabs2.addTab(tabGM, "Google Map")
+    tabs2.addTab(tabGraph, "Graph")
+    tabGM.layout = QVBoxLayout()
+    tabGM.setLayout(tabGM.layout)
+    h.addWidget(tabs2)
+
 
     tabs = QTabWidget()
     tab1 = QWidget()
@@ -209,45 +257,53 @@ if __name__ == '__main__':
 
 
     chart = QGraphicsView()
+
+    paraSample = QScrollArea()
+    paraSample.setWidgetResizable(True)
     layout1.addWidget(chart)
+    layout1.addWidget(paraSample)
 
     subLayout = QVBoxLayout()
     layout.addLayout(h)
     layout.addLayout(subLayout)
     ortherLayout = QHBoxLayout()
-    subLayout.addWidget(tabs)
-    subLayout.addLayout(ortherLayout)
+
+
+    topSubLayout = QHBoxLayout()
+    topSubLayout.addWidget(tabs)
+    topSubLayout.addLayout(ortherLayout)
+
+    subLayout.addLayout(topSubLayout)
+
+    subLayout.addLayout(layout1)
+    #subLayout.addLayout()
     btn1 = QPushButton("Apply")
     btn2 = QPushButton("Run")
-    btn3 = QPushButton("Stop")
     btn4 = QPushButton("Generate")
     formButCon1 = QGroupBox()
     butLayout1 = QFormLayout()
 
     butLayout1.addWidget(btn1)
     butLayout1.addWidget(btn2)
-    butLayout1.addWidget(btn3)
     #formButCon1.setLayout(butLayout1)
 
     butLayout2 = QFormLayout()
     butLayout2.addWidget(btn4)
-    #ortherLayout.addWidget(btn1)
-    #ortherLayout.addWidget(btn2)
-    #ortherLayout.addWidget(btn3)
-    #ortherLayout.addWidget(btn4)
     ortherLayout.setStretch(10,10)
+
     ortherLayout.addLayout(butLayout1)
     ortherLayout.addLayout(butLayout2)
     btn4.clicked.connect(openFileDialog)
 
+
+
     mainLayout.addLayout(layout)
-    mainLayout.addLayout(layout1)
 
     h.addLayout(l)
     numMarker = 0
     listMarker = []
 
-    btn.clicked.connect(showRoute)
+    btn2.clicked.connect(showRoute)
     gmap = QGoogleMap(w)
     gmap.mapMovedSignal.connect(onMapMoved)
     gmap.markerMovedSignal.connect(onMarkerMoved)
@@ -257,12 +313,27 @@ if __name__ == '__main__':
     gmap.markerClickedSignal.connect(onMarkerLClick)
     gmap.markerDoubleClickedSignal.connect(onMarkerDClick)
     gmap.markerRightClickedSignal.connect(onMarkerRClick)
-    h.addWidget(gmap)
+    #h.addWidget(gmap)
 
     gmap.setSizePolicy(
         QSizePolicy.MinimumExpanding,
         QSizePolicy.MinimumExpanding)
+    tabGM.layout.addWidget(gmap)
+
+
+
+
+    componentRS = ResultFrame(w)
+    showBtn = QPushButton("<", componentRS)
+    showBtn.resize(30, 50)
+    showBtn.move(0, 280)
+    showBtn.clicked.connect(componentRS.moveRs)
+
+
+
     #w.showFullScreen()
+    w.setGeometry(0,40,0,0)
+    w.resize(2600,0)
     w.show()
     gmap.waitUntilReady()
 
