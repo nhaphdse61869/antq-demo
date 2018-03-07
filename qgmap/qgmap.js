@@ -68,6 +68,21 @@ function get_TimeDuration(origin, destination) {
     return result;
 }
 
+function getAllParameters(listMarker){
+    var arr = new Array(listMarker.length);
+    for(var i = 0 ; i < arr.length; i++) {
+        arr[i] = new Array(listMarker.length);
+        for(var j = 0; j < arr[i].length; j++) {
+            if(i===j) {
+                arr[i][j] = 0;
+            } else {
+                arr[i][j] = get_TimeDuration(listMarker[i], listMarker[j]);
+            }
+        }
+    }
+    return arr;
+}
+
 function gmap_addMarker(key, latitude, longitude, parameters) {
 
     if (key in markers) {

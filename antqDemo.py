@@ -68,7 +68,6 @@ class ResultFrame(QWidget):
             animation.setEndValue(QRect(1060, 0, 300, 680))
             animation.start()
 
-
 class OpenFileDialog(QWidget):
 
     def __init__(self):
@@ -131,47 +130,36 @@ if __name__ == '__main__':
         gmap.moveMarker("MyDragableMark", *coords)
         coordsEdit.setText("{}, {}".format(*coords))
 
-
     def onMarkerMoved(key, latitude, longitude):
         print("Moved!!", key, latitude, longitude)
         coordsEdit.setText("{}, {}".format(latitude, longitude))
-
 
     def onMarkerRClick(key):
         print("RClick on ", key)
         gmap.setMarkerOptions(key, draggable=False)
 
-
     def onMarkerLClick(key):
         print("LClick on ", key)
-
 
     def onMarkerDClick(key):
         print("DClick on ", key)
         gmap.setMarkerOptions(key, draggable=True)
 
-
     def onMapMoved(latitude, longitude):
         print("Moved to ", latitude, longitude)
-
 
     def onMapRClick(latitude, longitude):
         print("RClick on ", latitude, longitude)
 
-
     def onMapLClick(latitude, longitude):
         global numMarker, listMarker
         numMarker += 1
-
         marker = {"latitude": latitude, "longitude": longitude}
         listMarker.append(marker)
-
         gmap.addMarker(str(numMarker), latitude, longitude, **dict(
             title="Move me!"
         ))
-
         print("LClick on ", latitude, longitude)
-
 
     def onMapDClick(latitude, longitude):
         print("DClick on ", latitude, longitude)
@@ -180,11 +168,8 @@ if __name__ == '__main__':
         global listMarker
         gmap.directss(listMarker)
 
-
     def openFileDialog():
         ex = OpenFileDialog();
-
-
 
     app = QApplication(sys.argv)
     w = QDialog()
@@ -202,7 +187,6 @@ if __name__ == '__main__':
     tabGM.layout = QVBoxLayout()
     tabGM.setLayout(tabGM.layout)
     h.addWidget(tabs2)
-
 
     tabs = QTabWidget()
     tab1 = QWidget()
@@ -295,8 +279,6 @@ if __name__ == '__main__':
     ortherLayout.addLayout(butLayout2)
     btn4.clicked.connect(openFileDialog)
 
-
-
     mainLayout.addLayout(layout)
 
     h.addLayout(l)
@@ -320,16 +302,11 @@ if __name__ == '__main__':
         QSizePolicy.MinimumExpanding)
     tabGM.layout.addWidget(gmap)
 
-
-
-
     componentRS = ResultFrame(w)
     showBtn = QPushButton("<", componentRS)
     showBtn.resize(30, 50)
     showBtn.move(0, 280)
     showBtn.clicked.connect(componentRS.moveRs)
-
-
 
     #w.showFullScreen()
     w.setGeometry(0,40,0,0)
