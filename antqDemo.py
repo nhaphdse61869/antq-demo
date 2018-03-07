@@ -8,6 +8,7 @@ from PyQt5.QtGui import QFont, QStandardItemModel
 from qgmap.common import QGoogleMap
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
+from figure.chart import LengthChartCanvas
 
 
 
@@ -240,7 +241,8 @@ if __name__ == '__main__':
     tab1.layout.addWidget(formContainer3)
 
 
-    chart = QGraphicsView()
+    chart = LengthChartCanvas()
+
 
     paraSample = QScrollArea()
     paraSample.setWidgetResizable(True)
@@ -326,5 +328,9 @@ if __name__ == '__main__':
                                 icon="http://maps.gstatic.com/mapfiles/ridefinder-images/mm_20_gray.png",
                                 )
     # gmap.setZoom(15)
+
+    #Implement Algorithm
+    matrix = gmap.getParaMatrix(listMarker)
+
 
     sys.exit(app.exec_())
