@@ -9,9 +9,8 @@ from qgmap.common import QGoogleMap
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from figure.chart import LengthChartCanvas
-
-
-
+from antq.antQ import AntQ
+from antq.antQGraph import AntQGraph
 
 class ResultFrame(QWidget):
     FROM, TO, TIME = range(3)
@@ -240,10 +239,8 @@ if __name__ == '__main__':
     tab1.layout.addWidget(formContainer2)
     tab1.layout.addWidget(formContainer3)
 
-
+    #Chart LINE
     chart = LengthChartCanvas()
-
-
     paraSample = QScrollArea()
     paraSample.setWidgetResizable(True)
     layout1.addWidget(chart)
@@ -261,16 +258,20 @@ if __name__ == '__main__':
 
     subLayout.addLayout(topSubLayout)
 
+
+    #function buttons
     subLayout.addLayout(layout1)
     #subLayout.addLayout()
     btn1 = QPushButton("Apply")
     btn2 = QPushButton("Run")
+    btn3 = QPushButton("Test")
     btn4 = QPushButton("Generate")
     formButCon1 = QGroupBox()
     butLayout1 = QFormLayout()
 
     butLayout1.addWidget(btn1)
     butLayout1.addWidget(btn2)
+    butLayout1.addWidget(btn3)
     #formButCon1.setLayout(butLayout1)
 
     butLayout2 = QFormLayout()
@@ -330,7 +331,14 @@ if __name__ == '__main__':
     # gmap.setZoom(15)
 
     #Implement Algorithm
-    matrix = gmap.getParaMatrix(listMarker)
+    def runAlgorithm():
+        global chart
+        matrix = gmap.convertTo2DArray(listMarker)
+        algGraphEx = AntQGraph(matrix)
+        algEx = AntQ(len(listMarker), 20, algGraphEx, chart)
+        algEx.run()
+        print(algEx.best_tour)
 
+    btn3.clicked.connect(runAlgorithm)
 
     sys.exit(app.exec_())

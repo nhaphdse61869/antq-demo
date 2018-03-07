@@ -131,9 +131,10 @@ class LengthChartCanvas(FigureCanvas):
         # Update axis of axes
         self.axes.set_ylim(self.ymin, self.ymax)
         self.axes.set_xlim(self.xmin, self.xmax)
+        self.draw()
 
         # Add new line
-        aline, = self.axes.plot(xdata, ydata)
+        aline, = self.axes.plot(xdata, ydata, "ro")
         self.lines.append(aline)
         return aline
 

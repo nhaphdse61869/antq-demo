@@ -1,3 +1,5 @@
+import googlemaps
+
 doTrace = False
 
 import json
@@ -199,10 +201,6 @@ class QGoogleMap(QWebEngineView):
         return self.runScript(
             "displayAllRout({})".format(listMarker))
 
-    @trace
-    def getParaMatrix(self, listMarker):
-        return self.runScript("getAllParameters({})".format_map(listMarker))
-
     @QtCore.pyqtSlot(str, float, float)
     def markerMoved(self, key, lat, long):
         self.markerMovedSignal.emit(key, lat, long)
@@ -235,3 +233,18 @@ class QGoogleMap(QWebEngineView):
     def mapDoubleClicked(self, lat, long):
         self.mapDoubleClickedSignal.emit(lat, long)
 
+    def convertTo2DArray(self, listMarker):
+        api_key = "AIzaSyCNHayAJYOTf-gi30fTgbA3SEXpjj3LDFM"
+        gmaps = googlemaps.Client(key=api_key)
+
+        dis_mat = [[0 for x in range(len(listMarker))] for y in range(len(listMarker))]
+        for i in range(len(listMarker)):
+            for j in range(len(listMarker)):
+                if i == j :
+                    dis_mat[i][j] = 0
+                else :
+                    duration = gmaps.distance_matrix(origins=(listMarker[i]['latitude'],listMarker[i]['longitude']),
+                                                     destinations=(listMarker[j]['latitude'],listMarker[j]['longitude']),
+                                                     mode="driving")
+                    dis_mat[i][j] = duration['rows'][0]['elements'][0]['duration']['value']
+        return dis_mat

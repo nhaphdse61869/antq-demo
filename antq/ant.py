@@ -8,7 +8,7 @@ class Ant:
         self.id = id
         self.start_node = start_node
         nodes_map = {}
-        self.tour = []
+        self.tour = [self.start_node]
         self.curr_node = start_node
         self.q0 = q0
         self.ant_q = ant_q
