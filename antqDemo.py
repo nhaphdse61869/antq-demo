@@ -11,6 +11,40 @@ from PyQt5.QtWidgets import *
 from figure.chart import LengthChartCanvas
 from antq.antQ import AntQ
 from antq.antQGraph import AntQGraph
+import asyncio
+
+class Filter(QSlider):
+    defaultK = 0
+    filterCount = 0
+
+    def __init__(self):
+        super(Filter, self).__init__()
+        self.numA = 0
+        self.k = round(self.numA*0.6)
+
+        # Label for the slider
+        self.k_lbl = QLabel(str(self.k))
+
+        # Increase the number of filters created
+        Filter.filterCount += 1
+
+        # Slider for the first OpenCV filter, with min, max, default and step values
+        self.thresh_sld = QSlider(Qt.Horizontal, self)
+        self.thresh_sld.setMinimum(round(self.numA*0.6))
+        self.thresh_sld.setMaximum(self.numA)
+        self.thresh_sld.setValue(self.k)
+
+    def changeValue(self, value):
+        # Function for setting the value of k1
+        self.k = value
+        self.thresh_sld.setValue(self.k)
+        self.k_lbl.setText(str(self.k))
+
+    def changeMax(self, value):
+        self.k = round(value*0.6)
+        self.thresh_sld.setMinimum(round(value * 0.6))
+        self.thresh_sld.setMaximum(value)
+        self.thresh_sld.setValue(self.k)
 
 class ResultFrame(QWidget):
     FROM, TO, TIME = range(3)
@@ -29,44 +63,28 @@ class ResultFrame(QWidget):
         dataLayout.addWidget(self.dataView)
         self.dataGroupBox.setLayout(dataLayout)
 
-        model = self.createMailModel(self)
+        model = self.createLogModel(self)
         self.dataView.setModel(model)
-        self.addMail(model, 'A', 'B', '2h')
-        self.addMail(model, 'B', 'C', '30m')
-        self.addMail(model, 'C', 'D', '5m')
+        self.addLog(model, 'A', 'B', '2h')
+        self.addLog(model, 'B', 'C', '30m')
+        self.addLog(model, 'C', 'D', '5m')
 
         mainLayout = QVBoxLayout()
         mainLayout.addWidget(self.dataGroupBox)
         self.setLayout(mainLayout)
 
-    def createMailModel(self, parent):
+    def createLogModel(self, parent):
         model = QStandardItemModel(0, 3, parent)
         model.setHeaderData(self.FROM, Qt.Horizontal, "From")
         model.setHeaderData(self.TO, Qt.Horizontal, "To")
         model.setHeaderData(self.TIME, Qt.Horizontal, "Time")
         return model
 
-    def addMail(self, model, cofrom, to, time):
+    def addLog(self, model, cofrom, to, time):
         model.insertRow(0)
         model.setData(model.index(0, self.FROM), cofrom)
         model.setData(model.index(0, self.TO), to)
         model.setData(model.index(0, self.TIME), time)
-
-    def moveRs(self):
-        old_pos = QRect(1345, 0, 300, 680)
-        new_pos = QRect(1060, 0, 300, 680)
-        if self.pos().x()==old_pos.x():
-            animation = QPropertyAnimation(self, b"geometry")
-            animation.setDuration(10000)
-            animation.setStartValue(QRect(1060, 0, 300, 680))
-            animation.setEndValue(QRect(1345, 0, 300, 680))
-            animation.start()
-        else:
-            animation = QPropertyAnimation(self, b"geometry")
-            animation.setDuration(10000)
-            animation.setStartValue(QRect(1345, 0, 300, 680))
-            animation.setEndValue(QRect(1060, 0, 300, 680))
-            animation.start()
 
 class OpenFileDialog(QWidget):
 
@@ -92,7 +110,7 @@ class OpenFileDialog(QWidget):
                                                   "All Files (*);;Python Files (*.py)", options=options)
         if fileName:
             data = json.load(open(fileName))
-            global listMarker, numMarker
+            global listMarker, numMarker, numOfAgents
             for coord in data:
                 numMarker += 1
                 marker = {"latitude": coord['latitude'], "longitude": coord['longitude']}
@@ -100,39 +118,11 @@ class OpenFileDialog(QWidget):
                 gmap.addMarker(str(numMarker), coord['latitude'], coord['longitude'], **dict(
                     title="Move me!"
                 ))
+            numOfAgents.changeMax(numMarker)
 
 
 if __name__ == '__main__':
 
-    def goCoords():
-        def resetError():
-            coordsEdit.setStyleSheet('')
-
-        try:
-            latitude, longitude = coordsEdit.text().split(",")
-        except ValueError:
-            coordsEdit.setStyleSheet("color: red;")
-            QTimer.singleShot(500, resetError)
-        else:
-            gmap.centerAt(latitude, longitude)
-            gmap.moveMarker("MyDragableMark", latitude, longitude)
-
-
-    def goAddress():
-        def resetError():
-            addressEdit.setStyleSheet('')
-
-        coords = gmap.centerAtAddress(addressEdit.text())
-        if coords is None:
-            addressEdit.setStyleSheet("color: red;")
-            QTimer.singleShot(500, resetError)
-            return
-        gmap.moveMarker("MyDragableMark", *coords)
-        coordsEdit.setText("{}, {}".format(*coords))
-
-    def onMarkerMoved(key, latitude, longitude):
-        print("Moved!!", key, latitude, longitude)
-        coordsEdit.setText("{}, {}".format(latitude, longitude))
 
     def onMarkerRClick(key):
         print("RClick on ", key)
@@ -152,13 +142,14 @@ if __name__ == '__main__':
         print("RClick on ", latitude, longitude)
 
     def onMapLClick(latitude, longitude):
-        global numMarker, listMarker
+        global numMarker, listMarker, numOfAgents
         numMarker += 1
         marker = {"latitude": latitude, "longitude": longitude}
         listMarker.append(marker)
         gmap.addMarker(str(numMarker), latitude, longitude, **dict(
             title="Move me!"
         ))
+        numOfAgents.changeMax(numMarker)
         print("LClick on ", latitude, longitude)
 
     def onMapDClick(latitude, longitude):
@@ -193,7 +184,7 @@ if __name__ == '__main__':
     tab2 = QWidget()
     tabs.addTab(tab1, "Ant-Q")
     tabs.addTab(tab2, "Others")
-    tab1.layout = QFormLayout()
+    tab1.layout = QVBoxLayout()
     tab1.setLayout(tab1.layout)
 
 
@@ -201,29 +192,39 @@ if __name__ == '__main__':
         size = self.value()
         label.setFont(QFont("Arial",size))
 
-    addressEdit = QLineEdit()
+    #Paramater Layout
+
+    topParaLayout = QVBoxLayout()
+    subTopParaLayoutUp = QHBoxLayout()
+    subTopParaLayoutDown = QHBoxLayout()
+
     titleNum = QLabel("Number of Agents:")
-    numOfAgents = QSlider(Qt.Horizontal)
-    numOfAgents.setMinimum(0)
-    numOfAgents.setMinimum(10)
-    #numOfAgents.valueChanged.connect(valuechange(titleNum))
-    tab1.layout.addWidget(titleNum)
-    tab1.layout.addWidget(numOfAgents)
-    coordsEdit = QLineEdit()
+    numOfAgents = Filter()
+    numOfAgents.thresh_sld.valueChanged.connect(numOfAgents.changeValue)
+    numText = numOfAgents.k_lbl
+    subTopParaLayoutUp.addWidget(titleNum)
+    subTopParaLayoutUp.addWidget(numText)
+    subTopParaLayoutDown.addWidget(numOfAgents.thresh_sld)
 
-
-    coordsEdit.editingFinished.connect(goCoords)
+    topParaLayout.addLayout(subTopParaLayoutUp)
+    topParaLayout.addLayout(subTopParaLayoutDown)
     formContainer1 = QGroupBox("Weight Relative")
     formLayout = QFormLayout()
-    formLayout.addRow(QLabel("δ:"), QSpinBox())
-    formLayout.addRow(QLabel("β:"), QSpinBox())
+    deltaSpin = QSpinBox()
+    deltaSpin.setMinimum(0)
+    deltaSpin.setMaximum(101)
+    formLayout.addRow(QLabel("δ:"), deltaSpin)
+    betaSpin = QSpinBox()
+    betaSpin.setMinimum(0)
+    betaSpin.setMaximum(101)
+    formLayout.addRow(QLabel("β:"), betaSpin)
     formContainer1.setLayout(formLayout)
 
     formContainer2 = QGroupBox("Learning Rate")
     formLayout1 = QFormLayout()
     learningRate = QSpinBox()
     learningRate.setMinimum(0)
-    learningRate.setMaximum(100)
+    learningRate.setMaximum(101)
     formLayout1.addRow(QLabel("α:"), learningRate)
     formContainer2.setLayout(formLayout1)
 
@@ -231,13 +232,38 @@ if __name__ == '__main__':
     formLayout2 = QFormLayout()
     discountFactor = QSpinBox()
     discountFactor.setMinimum(0)
-    discountFactor.setMaximum(100)
+    discountFactor.setMaximum(101)
     formLayout2.addRow(QLabel("ϒ:"), discountFactor)
     formContainer3.setLayout(formLayout2)
 
-    tab1.layout.addWidget(formContainer1)
-    tab1.layout.addWidget(formContainer2)
-    tab1.layout.addWidget(formContainer3)
+    formContainer4 = QGroupBox("Balance Rate")
+    formLayout3 = QFormLayout()
+    balanceRate = QSpinBox()
+    balanceRate.setMinimum(0)
+    balanceRate.setMaximum(101)
+    formLayout3.addRow(QLabel("BR:"), balanceRate)
+    formContainer4.setLayout(formLayout3)
+
+    formContainer5 = QGroupBox("Iteration")
+    formLayout4 = QFormLayout()
+    iteration = QSpinBox()
+    iteration.setMinimum(0)
+    formLayout4.addRow(QLabel("Iter:"), iteration)
+    formContainer5.setLayout(formLayout4)
+
+    paraLayoutH = QHBoxLayout()
+    paraLayoutLeft = QVBoxLayout()
+    paraLayoutRight = QVBoxLayout()
+    paraLayoutH.addLayout(paraLayoutLeft)
+    paraLayoutH.addLayout(paraLayoutRight)
+    paraLayoutLeft.addWidget(formContainer1)
+    paraLayoutLeft.addWidget(formContainer2)
+    paraLayoutLeft.addWidget(formContainer3)
+    paraLayoutRight.addWidget(formContainer4)
+    paraLayoutRight.addWidget(formContainer5)
+
+    tab1.layout.addLayout(topParaLayout)
+    tab1.layout.addLayout(paraLayoutH)
 
     #Chart LINE
     chart = LengthChartCanvas()
@@ -261,7 +287,6 @@ if __name__ == '__main__':
 
     #function buttons
     subLayout.addLayout(layout1)
-    #subLayout.addLayout()
     btn1 = QPushButton("Apply")
     btn2 = QPushButton("Run")
     btn3 = QPushButton("Test")
@@ -272,15 +297,12 @@ if __name__ == '__main__':
     butLayout1.addWidget(btn1)
     butLayout1.addWidget(btn2)
     butLayout1.addWidget(btn3)
-    #formButCon1.setLayout(butLayout1)
-
     butLayout2 = QFormLayout()
     butLayout2.addWidget(btn4)
     ortherLayout.setStretch(10,10)
 
     ortherLayout.addLayout(butLayout1)
     ortherLayout.addLayout(butLayout2)
-    btn4.clicked.connect(openFileDialog)
 
     mainLayout.addLayout(layout)
 
@@ -288,17 +310,16 @@ if __name__ == '__main__':
     numMarker = 0
     listMarker = []
 
-    btn2.clicked.connect(showRoute)
+    #GG Maps container
+
     gmap = QGoogleMap(w)
     gmap.mapMovedSignal.connect(onMapMoved)
-    gmap.markerMovedSignal.connect(onMarkerMoved)
     gmap.mapClickedSignal.connect(onMapLClick)
     gmap.mapDoubleClickedSignal.connect(onMapDClick)
     gmap.mapRightClickedSignal.connect(onMapRClick)
     gmap.markerClickedSignal.connect(onMarkerLClick)
     gmap.markerDoubleClickedSignal.connect(onMarkerDClick)
     gmap.markerRightClickedSignal.connect(onMarkerRClick)
-    #h.addWidget(gmap)
 
     gmap.setSizePolicy(
         QSizePolicy.MinimumExpanding,
@@ -306,11 +327,29 @@ if __name__ == '__main__':
     tabGM.layout.addWidget(gmap)
 
     componentRS = ResultFrame(w)
+    componentRS.setWindowOpacity(1)
     showBtn = QPushButton("<", componentRS)
     showBtn.resize(30, 50)
     showBtn.move(0, 280)
-    showBtn.clicked.connect(componentRS.moveRs)
 
+    animation = QPropertyAnimation(componentRS, b"geometry")
+    animation1 = QPropertyAnimation(componentRS, b"opacity")
+    #animation
+    def moveRs():
+        global componentRS, animation, animation1
+        old_pos = QRect(1345, 0, 300, 680)
+        if componentRS.pos().x()==old_pos.x():
+            animation.setDuration(2000)
+            animation.setStartValue(QRect(1345, 0, 300, 680))
+            animation.setEndValue(QRect(1070, 0, 300, 680))
+            animation.start()
+        else:
+            animation.setDuration(2000)
+            animation.setStartValue(QRect(1070, 0, 300, 680))
+            animation.setEndValue(QRect(1345, 0, 300, 680))
+            animation.start()
+
+    showBtn.clicked.connect(moveRs)
     #w.showFullScreen()
     w.setGeometry(0,40,0,0)
     w.resize(2600,0)
@@ -330,15 +369,37 @@ if __name__ == '__main__':
                                 )
     # gmap.setZoom(15)
 
+    #Parameter to excute algorithm
+    #default values
+    delta = 0
+    beta = 0
+    Ite = 0
+    numAgents = 0
+    LR = 0
+    DF = 0
+    BR = 0
+
+    def applyPara():
+        global deltaSpin, balanceRate, discountFactor, betaSpin, iteration, delta, beta, Ite, numAgents, LR, DF, BR
+        delta = deltaSpin.value
+        beta = betaSpin.value
+        Ite = iteration.value
+        LR = learningRate.value
+        DF = discountFactor.value
+        BR = balanceRate.value
+
     #Implement Algorithm
     def runAlgorithm():
         global chart
+        global alpha, delta, Ite, numAgents, LR, DF, BR
         matrix = gmap.convertTo2DArray(listMarker)
         algGraphEx = AntQGraph(matrix)
-        algEx = AntQ(len(listMarker), 20, algGraphEx, chart)
+        algEx = AntQ(len(listMarker), 20, algGraphEx, chart, LR/100, DF/100, delta/100, beta/100)
         algEx.run()
-        print(algEx.best_tour)
 
+    btn2.clicked.connect(showRoute)
+    btn1.clicked.connect(applyPara)
     btn3.clicked.connect(runAlgorithm)
+    btn4.clicked.connect(openFileDialog)
 
     sys.exit(app.exec_())
