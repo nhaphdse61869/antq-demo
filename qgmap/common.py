@@ -199,6 +199,10 @@ class QGoogleMap(QWebEngineView):
         return self.runScript(
             "displayAllRout({})".format(listMarker))
 
+    @trace
+    def getParaMatrix(self, listMarker):
+        return self.runScript("getAllParameters({})".format_map(listMarker))
+
     @QtCore.pyqtSlot(str, float, float)
     def markerMoved(self, key, lat, long):
         self.markerMovedSignal.emit(key, lat, long)
