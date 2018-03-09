@@ -1,11 +1,11 @@
 import sys
-
 from antq.ant import Ant
 import numpy as np
-from figure.chart import LengthChartCanvas
+from PyQt5.QtCore import QThread
 
-class AntQ:
-    def __init__(self, number_of_ants, num_of_iteration, graph, aqchart, alpha=.1, gamma=.3, delta=1, beta=2, w=10):
+class AntQ(QThread):
+    def __init__(self, number_of_ants, num_of_iteration, graph, aqchart, aqgraph, alpha=.1, gamma=.3, delta=1, beta=2, w=10):
+        QThread.__init__(self)
         self.number_of_ants = number_of_ants
         self.alpha = alpha
         self.gamma = gamma
@@ -19,6 +19,7 @@ class AntQ:
         self.best_ant = -1
         self.ants = []
         self.aqchart = aqchart
+        self.aqgraph = aqgraph
 
     def delay_val(self):
         p_sum = 0
@@ -50,7 +51,6 @@ class AntQ:
 
     def run(self):
         for i in range(0, self.num_of_iteration):
-
             print("Iteration[%s]" % i)
             self.create_ants()
             for j in range(0, self.graph.num_node):
@@ -66,7 +66,10 @@ class AntQ:
             # Init chart line
             if i == 0:
                 self.aqchart.add_new_line([i+1],[self.best_tour_len])
+            else:
+                self.aqchart.update_newest_line((i + 1), self.best_tour_len)
             print("Iteration best: %s, %s, %s" % (self.best_tour, self.best_tour_len, self.best_ant,))
+        self.aqgraph.draw_path_by_tour(self.best_tour)
 
 
 

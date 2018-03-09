@@ -3,8 +3,8 @@ import pickle
 import sys
 import traceback
 
-from antQ import AntQ
-from antQGraph import AntQGraph
+from antq.antQ import AntQ
+from antq.antQGraph import AntQGraph
 
 if __name__ == "__main__":
     stuff = pickle.load(open("citiesAndDistances.pickled", "rb"))

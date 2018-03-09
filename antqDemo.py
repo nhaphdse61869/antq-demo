@@ -8,10 +8,10 @@ from PyQt5.QtGui import QFont, QStandardItemModel
 from qgmap.common import QGoogleMap
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-from figure.chart import LengthChartCanvas
+from figure.chart import LengthChartCanvas, GraphCanvas
 from antq.antQ import AntQ
 from antq.antQGraph import AntQGraph
-import asyncio
+
 
 class Filter(QSlider):
     defaultK = 0
@@ -110,7 +110,7 @@ class OpenFileDialog(QWidget):
                                                   "All Files (*);;Python Files (*.py)", options=options)
         if fileName:
             data = json.load(open(fileName))
-            global listMarker, numMarker, numOfAgents
+            global listMarker, numMarker, numOfAgents, graph
             for coord in data:
                 numMarker += 1
                 marker = {"latitude": coord['latitude'], "longitude": coord['longitude']}
@@ -118,6 +118,7 @@ class OpenFileDialog(QWidget):
                 gmap.addMarker(str(numMarker), coord['latitude'], coord['longitude'], **dict(
                     title="Move me!"
                 ))
+                graph.add_coord((coord['latitude'],  coord['longitude']))
             numOfAgents.changeMax(numMarker)
 
 
@@ -149,6 +150,7 @@ if __name__ == '__main__':
         gmap.addMarker(str(numMarker), latitude, longitude, **dict(
             title="Move me!"
         ))
+        graph.add_coord((latitude, longitude))
         numOfAgents.changeMax(numMarker)
         print("LClick on ", latitude, longitude)
 
@@ -272,6 +274,13 @@ if __name__ == '__main__':
     layout1.addWidget(chart)
     layout1.addWidget(paraSample)
 
+    #Chart Graph
+    graph = GraphCanvas(width=6, height=5, dpi=110)
+    tabGraph.layout = QVBoxLayout()
+    tabGraph.setLayout(tabGraph.layout)
+    tabGraph.layout.addWidget(graph)
+    tabGraph.layout.setSpacing(0)
+
     subLayout = QVBoxLayout()
     layout.addLayout(h)
     layout.addLayout(subLayout)
@@ -390,12 +399,12 @@ if __name__ == '__main__':
 
     #Implement Algorithm
     def runAlgorithm():
-        global chart
+        global chart, algEx, graph
         global alpha, delta, Ite, numAgents, LR, DF, BR
         matrix = gmap.convertTo2DArray(listMarker)
         algGraphEx = AntQGraph(matrix)
-        algEx = AntQ(len(listMarker), 20, algGraphEx, chart, LR/100, DF/100, delta/100, beta/100)
-        algEx.run()
+        algEx = AntQ(len(listMarker), 200, algGraphEx, chart, graph)
+        algEx.start()
 
     btn2.clicked.connect(showRoute)
     btn1.clicked.connect(applyPara)

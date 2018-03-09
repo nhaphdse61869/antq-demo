@@ -4,7 +4,7 @@ import numpy as np
 
 
 class Ant:
-    def __init__(self, id, ant_q, start_node, q0=0.7):
+    def __init__(self, id, ant_q, start_node, q0=0.9):
         self.id = id
         self.start_node = start_node
         nodes_map = {}
