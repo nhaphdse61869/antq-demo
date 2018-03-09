@@ -199,7 +199,7 @@ class QGoogleMap(QWebEngineView):
     @trace
     def directss(self, listMarker):
         return self.runScript(
-            "displayAllRout({})".format(listMarker))
+            "displayAllRouteVer2({})".format(listMarker))
 
     @QtCore.pyqtSlot(str, float, float)
     def markerMoved(self, key, lat, long):
