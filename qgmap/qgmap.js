@@ -101,7 +101,6 @@ function sleep(ms) {
 async function displayAllRout(listCoords) {
     var directionsService = new google.maps.DirectionsService;
     for(var i = 0; i < listCoords.length-1; i++) {
-
         var currentCoord = new google.maps.LatLng(listCoords[i].latitude, listCoords[i].longitude);
         var nextCoord = new google.maps.LatLng(listCoords[i+1].latitude, listCoords[i+1].longitude);
         directionsService.route({
@@ -110,20 +109,72 @@ async function displayAllRout(listCoords) {
             travelMode: 'DRIVING'
         }, function (response, status) {
             if (status === 'OK') {
-            var directionsDisplay = new google.maps.DirectionsRenderer;
-            directionsDisplay.setMap(map);
-            directionsDisplay.setOptions({suppressMarkers: true});
-            directionsDisplay.setDirections(response);
+                var directionsDisplay = new google.maps.DirectionsRenderer;
+                directionsDisplay.setMap(map);
+                directionsDisplay.setOptions({suppressMarkers: true});
+                directionsDisplay.setDirections(response);
             } else {
             window.alert('Directions request failed due to ' + status);
             }
         });
-        await sleep(125);
+        await sleep(200);
     }
 }
 
+function displayAllRouteVer2(listCoords) {
+    var directionsService = new google.maps.DirectionsService;
+    var waypts = [];
+    for(var i = 1; i < listCoords.length; i++) {
+        if(i%10==9) {
+            var start = new google.maps.LatLng(listCoords[i-9].latitude, listCoords[i-9].longitude);
+            var end = new google.maps.LatLng(listCoords[i].latitude, listCoords[i].longitude);
+            directionsService.route({
+                origin: start,
+                destination: end,
+                waypoints: waypts,
+                optimizeWaypoints: true,
+                travelMode: 'DRIVING'
+            }, function(response, status) {
+                if (status === 'OK') {
+                    var directionsDisplay = new google.maps.DirectionsRenderer;
+                    directionsDisplay.setMap(map);
+                    directionsDisplay.setOptions({suppressMarkers: true});
+                    directionsDisplay.setDirections(response);
+                } else {
+                    window.alert('Directions request failed due to ' + status);
+                }
+            });
+            waypts = [];
+        } else if(i==listCoords.length-1) {
 
-
+            var sub = i%10;
+            var start = new google.maps.LatLng(listCoords[i-sub].latitude, listCoords[i-sub].longitude);
+            var end = new google.maps.LatLng(listCoords[i].latitude, listCoords[i].longitude);
+            directionsService.route({
+                origin: start,
+                destination: end,
+                waypoints: waypts,
+                optimizeWaypoints: false,
+                travelMode: 'DRIVING'
+            }, function(response, status) {
+                if (status === 'OK') {
+                    var directionsDisplay = new google.maps.DirectionsRenderer;
+                    directionsDisplay.setMap(map);
+                    directionsDisplay.setOptions({suppressMarkers: true});
+                    directionsDisplay.setDirections(response);
+                } else {
+                    window.alert('Directions request failed due to ' + status);
+                }
+            });
+        } else if(i%10!=0) {
+            var cur = new google.maps.LatLng(listCoords[i].latitude, listCoords[i].longitude);
+            waypts.push({
+              location: cur,
+              stopover: true
+            });
+        }
+    }
+}
 
 function gmap_moveMarker(key, latitude, longitude) {
     var coords = new google.maps.LatLng(latitude, longitude);
