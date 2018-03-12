@@ -11,81 +11,10 @@ from PyQt5.QtWidgets import *
 from figure.chart import LengthChartCanvas, GraphCanvas
 from antq.antQ import AntQ
 from antq.antQGraph import AntQGraph
+from UI.Filter import Filter
+from UI.ResultFrame import ResultFrame
 
 
-class Filter(QSlider):
-    defaultK = 0
-    filterCount = 0
-
-    def __init__(self):
-        super(Filter, self).__init__()
-        self.numA = 0
-        self.k = round(self.numA*0.6)
-
-        # Label for the slider
-        self.k_lbl = QLabel(str(self.k))
-
-        # Increase the number of filters created
-        Filter.filterCount += 1
-
-        # Slider for the first OpenCV filter, with min, max, default and step values
-        self.thresh_sld = QSlider(Qt.Horizontal, self)
-        self.thresh_sld.setMinimum(round(self.numA*0.6))
-        self.thresh_sld.setMaximum(self.numA)
-        self.thresh_sld.setValue(self.k)
-
-
-    def changeValue(self, value):
-        # Function for setting the value of k1
-        self.k = value
-        self.thresh_sld.setValue(self.k)
-        self.k_lbl.setText(str(self.k))
-
-    def changeMax(self, value):
-        self.k = round(value*0.6)
-        self.thresh_sld.setMinimum(round(value * 0.6))
-        self.thresh_sld.setMaximum(value)
-        self.thresh_sld.setValue(self.k)
-
-class ResultFrame(QWidget):
-    FROM, TO, TIME = range(3)
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.initUI()
-
-    def initUI(self):
-        self.setGeometry(1345, 0, 300, 680)
-        self.dataGroupBox = QGroupBox("Result")
-        self.dataView = QTreeView()
-        self.dataView.setRootIsDecorated(False)
-        self.dataView.setAlternatingRowColors(True)
-
-        dataLayout = QHBoxLayout()
-        dataLayout.addWidget(self.dataView)
-        self.dataGroupBox.setLayout(dataLayout)
-
-        model = self.createLogModel(self)
-        self.dataView.setModel(model)
-        self.addLog(model, 'A', 'B', '2h')
-        self.addLog(model, 'B', 'C', '30m')
-        self.addLog(model, 'C', 'D', '5m')
-
-        mainLayout = QVBoxLayout()
-        mainLayout.addWidget(self.dataGroupBox)
-        self.setLayout(mainLayout)
-
-    def createLogModel(self, parent):
-        model = QStandardItemModel(0, 3, parent)
-        model.setHeaderData(self.FROM, Qt.Horizontal, "From")
-        model.setHeaderData(self.TO, Qt.Horizontal, "To")
-        model.setHeaderData(self.TIME, Qt.Horizontal, "Time")
-        return model
-
-    def addLog(self, model, cofrom, to, time):
-        model.insertRow(0)
-        model.setData(model.index(0, self.FROM), cofrom)
-        model.setData(model.index(0, self.TO), to)
-        model.setData(model.index(0, self.TIME), time)
 
 class OpenFileDialog(QWidget):
 
@@ -262,6 +191,18 @@ if __name__ == '__main__':
     formLayout4.addRow(QLabel("Iter:"), iteration)
     formContainer5.setLayout(formLayout4)
 
+    formContainer6 = QGroupBox("Clustering")
+    formLayout5 = QFormLayout()
+    Knum = QSpinBox()
+    Knum.setMinimum(0)
+    Knum.setMaximum(1000)
+    Knum.setDisabled(True)
+    checkK = QCheckBox()
+
+    formLayout5.addRow(QLabel("Use:"), checkK)
+    formLayout5.addRow(QLabel("K nums:"), Knum)
+    formContainer6.setLayout(formLayout5)
+
     paraLayoutH = QHBoxLayout()
     paraLayoutLeft = QVBoxLayout()
     paraLayoutRight = QVBoxLayout()
@@ -272,16 +213,29 @@ if __name__ == '__main__':
     paraLayoutLeft.addWidget(formContainer3)
     paraLayoutRight.addWidget(formContainer4)
     paraLayoutRight.addWidget(formContainer5)
+    paraLayoutRight.addWidget(formContainer6)
 
     tab1.layout.addLayout(topParaLayout)
     tab1.layout.addLayout(paraLayoutH)
 
     #Chart LINE
+    tabGraphs = QTabWidget()
+    tabG1 = QWidget()
+    tabG2 = QWidget()
+    tabG3 = QWidget()
+    tabGraphs.addTab(tabG1, "Best Length")
+    tabGraphs.addTab(tabG2, "Mean Leangth")
+    tabGraphs.addTab(tabG3, "Variance Leangth")
+    tabG1.layout = QVBoxLayout()
+    tabG1.setLayout(tabG1.layout)
     chart = LengthChartCanvas()
     paraSample = QScrollArea()
     paraSample.setWidgetResizable(True)
-    layout1.addWidget(chart)
-    layout1.addWidget(paraSample)
+    tabG1.layout.addWidget(chart)
+    tabG1.layout.addWidget(paraSample)
+    layout1.addWidget(tabGraphs)
+    #layout1.addWidget(chart)
+    #layout1.addWidget(paraSample)
 
     #Chart Graph
     graph = GraphCanvas(width=6, height=5, dpi=110)
@@ -369,6 +323,7 @@ if __name__ == '__main__':
             animation.start()
             showBtn.setText("<")
 
+
     showBtn.clicked.connect(moveRs)
     #w.showFullScreen()
     w.setGeometry(0,40,0,0)
@@ -417,6 +372,16 @@ if __name__ == '__main__':
         algGraphEx = AntQGraph(matrix)
         algEx = AntQ(numAgents, Ite, algGraphEx, chart, graph, LR/100, DF/100, delta, beta)
         algEx.start()
+
+    def enableSpinBox():
+        global Knum, checkK
+        if checkK.isChecked() == True:
+            Knum.setDisabled(False)
+        else :
+            Knum.setDisabled(True)
+
+
+    checkK.stateChanged.connect(enableSpinBox)
 
     btn2.clicked.connect(showRoute)
     btn1.clicked.connect(applyPara)
