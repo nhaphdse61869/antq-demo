@@ -46,7 +46,7 @@ class GeoCoder(QNetworkAccessManager):
 
         query = QUrlQuery()
         query.addQueryItem("address", location)
-        query.addQueryItem("sensor", "false")
+        # query.addQueryItem("sensor", "false")
 
         url.setQuery(query)
         """
