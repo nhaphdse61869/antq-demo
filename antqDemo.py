@@ -13,7 +13,7 @@ from antq.antQ import AntQ
 from antq.antQGraph import AntQGraph
 from UI.Filter import Filter
 from UI.ResultFrame import ResultFrame
-
+import codecs
 
 
 class OpenFileDialog(QWidget):
@@ -39,16 +39,16 @@ class OpenFileDialog(QWidget):
         fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
                                                   "All Files (*);;Python Files (*.py)", options=options)
         if fileName:
-            data = json.load(open(fileName))
+            data = json.load(codecs.open(fileName, 'r', 'utf-8-sig'))
             global listMarker, numMarker, numOfAgents, graph
             for coord in data:
                 numMarker += 1
                 marker = {"latitude": coord['latitude'], "longitude": coord['longitude']}
                 listMarker.append(marker)
-                gmap.addMarker(str(numMarker), coord['latitude'], coord['longitude'], **dict(
+                gmap.addMarker(str(numMarker), marker['latitude'], marker['longitude'], **dict(
                     title="Move me!"
                 ))
-                graph.add_coord((coord['latitude'],  coord['longitude']))
+                graph.add_coord((marker['latitude'],  marker['longitude']))
             numOfAgents.changeMax(numMarker)
 
 
@@ -87,9 +87,9 @@ if __name__ == '__main__':
     def onMapDClick(latitude, longitude):
         print("DClick on ", latitude, longitude)
 
-    def showRoute():
+    def showRoute(best_tour):
         global listMarker
-        gmap.directss(listMarker)
+        gmap.directss(listMarker, best_tour)
 
     def openFileDialog():
         ex = OpenFileDialog();
@@ -366,12 +366,15 @@ if __name__ == '__main__':
 
     #Implement Algorithm
     def runAlgorithm():
+        applyPara()
         global chart, algEx, graph
         global beta, delta, Ite, numAgents, LR, DF, BR
         matrix = gmap.convertTo2DArray(listMarker)
         algGraphEx = AntQGraph(matrix)
         algEx = AntQ(numAgents, Ite, algGraphEx, chart, graph, LR/100, DF/100, delta, beta)
         algEx.start()
+        best = algEx.best_tour
+        showRoute(best)
 
     def enableSpinBox():
         global Knum, checkK
@@ -383,7 +386,7 @@ if __name__ == '__main__':
 
     checkK.stateChanged.connect(enableSpinBox)
 
-    btn2.clicked.connect(showRoute)
+    btn2.clicked.connect(runAlgorithm)
     btn1.clicked.connect(applyPara)
     btn3.clicked.connect(runAlgorithm)
     btn4.clicked.connect(openFileDialog)
