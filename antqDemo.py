@@ -5,6 +5,7 @@ import sys
 
 from PyQt5.QtGui import QFont, QStandardItemModel
 
+from antQRun import AntQRun
 from qgmap.common import QGoogleMap
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
@@ -47,8 +48,10 @@ class Filter(QSlider):
         self.thresh_sld.setMaximum(value)
         self.thresh_sld.setValue(self.k)
 
+
 class ResultFrame(QWidget):
     FROM, TO, TIME = range(3)
+
     def __init__(self, parent):
         super().__init__(parent)
         self.initUI()
@@ -86,6 +89,7 @@ class ResultFrame(QWidget):
         model.setData(model.index(0, self.FROM), cofrom)
         model.setData(model.index(0, self.TO), to)
         model.setData(model.index(0, self.TIME), time)
+
 
 class OpenFileDialog(QWidget):
 
@@ -394,7 +398,7 @@ if __name__ == '__main__':
     delta = 1
     beta = 2
     Ite = 200
-    numAgents = 1
+    numAgents = 2
     LR = 10
     DF = 30
     BR = 90
@@ -409,13 +413,25 @@ if __name__ == '__main__':
         BR = balanceRate.value()
         numAgents = numOfAgents.k
 
+
+    def draw_chart(i, render_var, global_best):
+        global chart, graph
+        # Init chart line
+        if i == 0:
+            chart.add_new_line([i + 1], [render_var])
+        else:
+            chart.update_newest_line((i + 1), render_var)
+
+        if i == Ite - 1:
+            graph.draw_path_by_tour(global_best)
+
     #Implement Algorithm
     def runAlgorithm():
-        global chart, algEx, graph
+        global algEx
         global beta, delta, Ite, numAgents, LR, DF, BR
         matrix = gmap.convertTo2DArray(listMarker)
         algGraphEx = AntQGraph(matrix)
-        algEx = AntQ(numAgents, Ite, algGraphEx, chart, graph, LR/100, DF/100, delta, beta)
+        algEx = AntQ(numAgents, Ite, algGraphEx, LR/100, DF/100, delta, beta, renderFunc=draw_chart)
         algEx.start()
 
     btn2.clicked.connect(showRoute)

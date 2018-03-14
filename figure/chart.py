@@ -1,12 +1,13 @@
 import matplotlib
-
-# Make sure that we are using QT5
-matplotlib.use('Qt5Agg')
-from PyQt5 import QtCore, QtWidgets
-
 import numpy as np
+
+matplotlib.use('Qt5Agg')
+
+from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+
+# Make sure that we are using QT5
 
 
 class GraphCanvas(FigureCanvas):
