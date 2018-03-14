@@ -5,13 +5,18 @@ import sys
 
 from PyQt5.QtGui import QFont, QStandardItemModel
 
-from antQRun import AntQRun
 from qgmap.common import QGoogleMap
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from figure.chart import LengthChartCanvas, GraphCanvas
 from antq.antQ import AntQ
 from antq.antQGraph import AntQGraph
+
+
+class CallbackList(list):
+    def fire(self, *args, **kwargs):
+        for listener in self:
+            listener(*args, **kwargs)
 
 
 class Filter(QSlider):
@@ -431,7 +436,13 @@ if __name__ == '__main__':
         global beta, delta, Ite, numAgents, LR, DF, BR
         matrix = gmap.convertTo2DArray(listMarker)
         algGraphEx = AntQGraph(matrix)
-        algEx = AntQ(numAgents, Ite, algGraphEx, LR/100, DF/100, delta, beta, renderFunc=draw_chart)
+
+        #Init callback list to render multiple real-time graphs
+        render_cb = CallbackList()
+        render_cb.append(draw_chart)
+        render_func = render_cb.fire
+
+        algEx = AntQ(numAgents, Ite, algGraphEx, LR/100, DF/100, delta, beta, renderFunc=render_func)
         algEx.start()
 
     btn2.clicked.connect(showRoute)
