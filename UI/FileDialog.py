@@ -1,24 +1,28 @@
 import json
-from PyQt5.QtWidgets import *
-from UI.MainUI import UIThread
 import codecs
+
+from PyQt5.QtWidgets import *
+from UI.MainUI import *
 
 class OpenFileDialog(QWidget):
 
-    def __init__(self):
+    def __init__(self, listMarker, numMarker, graph, gmap):
         super().__init__()
         self.title = 'PyQt5 file dialogs - pythonspot.com'
         self.left = 10
         self.top = 10
         self.width = 640
         self.height = 480
+        self.listMarker = listMarker
+        self.numMarker = numMarker
+        self.graph = graph
+        self.gmap = gmap
         self.initUI()
 
     def initUI(self):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
         self.openFileNameDialog()
-        self.show()
 
     def openFileNameDialog(self):
         options = QFileDialog.Options()
@@ -27,17 +31,12 @@ class OpenFileDialog(QWidget):
                                                   "All Files (*);;Python Files (*.py)", options=options)
         if fileName:
             data = json.load(codecs.open(fileName, 'r', 'utf-8-sig'))
-            listMarker = UIThread.listMarker
-            numMarker = UIThread.numMarker
-            numOfAgents = UIThread.numOfAgents
-            graph = UIThread.graph
             for coord in data:
-                numMarker += 1
+                self.numMarker += 1
                 marker = {"latitude": coord['latitude'], "longitude": coord['longitude']}
-                listMarker.append(marker)
-                gmap = UIThread.gmap
-                gmap.addMarker(str(numMarker), marker['latitude'], marker['longitude'], **dict(
+                self.listMarker.append(marker)
+                self.gmap.addMarker(str(self.numMarker), marker['latitude'], marker['longitude'], **dict(
                     title="Move me!"
                 ))
-                graph.add_coord((marker['latitude'],  marker['longitude']))
-            numOfAgents.changeMax(numMarker)
+                self.graph.add_coord((marker['latitude'],  marker['longitude']))
+                #self.numOfAgents.changeMax(UIThread.numMarker)

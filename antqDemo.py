@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 import sys
 
-from PyQt5.QtWidgets import *
-from UI.MainUI import UIThread
+from UI.MainUI import *
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = UIThread()
+    ex.showMaximized()
     sys.exit(app.exec_())
