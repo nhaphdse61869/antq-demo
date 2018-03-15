@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import *
 from figure.chart import LengthChartCanvas, GraphCanvas
 from antq.antQ import AntQ
 from antq.antQGraph import AntQGraph
+from cluster.kmeans import KMean
 
 
 class Filter(QSlider):
@@ -33,7 +34,6 @@ class Filter(QSlider):
         self.thresh_sld.setMinimum(round(self.numA*0.6))
         self.thresh_sld.setMaximum(self.numA)
         self.thresh_sld.setValue(self.k)
-
 
     def changeValue(self, value):
         # Function for setting the value of k1
@@ -216,22 +216,18 @@ if __name__ == '__main__':
     deltaSpin = QSpinBox()
     deltaSpin.setMinimum(0)
     deltaSpin.setMaximum(101)
-    deltaSpin.setValue(1)
     formLayout.addRow(QLabel("δ:"), deltaSpin)
     betaSpin = QSpinBox()
     betaSpin.setMinimum(0)
-    betaSpin.setMaximum(100)
-    betaSpin.setValue(2)
+    betaSpin.setMaximum(101)
     formLayout.addRow(QLabel("β:"), betaSpin)
     formContainer1.setLayout(formLayout)
 
     formContainer2 = QGroupBox("Learning Rate")
     formLayout1 = QFormLayout()
     learningRate = QSpinBox()
-
     learningRate.setMinimum(0)
-    learningRate.setMaximum(100)
-    learningRate.setValue(10)
+    learningRate.setMaximum(101)
     formLayout1.addRow(QLabel("α:"), learningRate)
     formContainer2.setLayout(formLayout1)
 
@@ -239,8 +235,7 @@ if __name__ == '__main__':
     formLayout2 = QFormLayout()
     discountFactor = QSpinBox()
     discountFactor.setMinimum(0)
-    discountFactor.setMaximum(100)
-    discountFactor.setValue(30)
+    discountFactor.setMaximum(101)
     formLayout2.addRow(QLabel("ϒ:"), discountFactor)
     formContainer3.setLayout(formLayout2)
 
@@ -248,8 +243,7 @@ if __name__ == '__main__':
     formLayout3 = QFormLayout()
     balanceRate = QSpinBox()
     balanceRate.setMinimum(0)
-    balanceRate.setMaximum(100)
-    balanceRate.setValue(90)
+    balanceRate.setMaximum(101)
     formLayout3.addRow(QLabel("BR:"), balanceRate)
     formContainer4.setLayout(formLayout3)
 
@@ -257,8 +251,6 @@ if __name__ == '__main__':
     formLayout4 = QFormLayout()
     iteration = QSpinBox()
     iteration.setMinimum(0)
-    iteration.setMaximum(1000)
-    iteration.setValue(200)
     formLayout4.addRow(QLabel("Iter:"), iteration)
     formContainer5.setLayout(formLayout4)
 
@@ -354,20 +346,18 @@ if __name__ == '__main__':
     animation1 = QPropertyAnimation(componentRS, b"opacity")
     #animation
     def moveRs():
-        global componentRS, animation, animation1,showBtn
+        global componentRS, animation, animation1
         old_pos = QRect(1345, 0, 300, 680)
         if componentRS.pos().x()==old_pos.x():
-            animation.setDuration(1000)
+            animation.setDuration(2000)
             animation.setStartValue(QRect(1345, 0, 300, 680))
             animation.setEndValue(QRect(1070, 0, 300, 680))
             animation.start()
-            showBtn.setText(">")
         else:
-            animation.setDuration(1000)
+            animation.setDuration(2000)
             animation.setStartValue(QRect(1070, 0, 300, 680))
             animation.setEndValue(QRect(1345, 0, 300, 680))
             animation.start()
-            showBtn.setText("<")
 
     showBtn.clicked.connect(moveRs)
     #w.showFullScreen()
@@ -391,32 +381,36 @@ if __name__ == '__main__':
 
     #Parameter to excute algorithm
     #default values
-    delta = 1
-    beta = 2
-    Ite = 200
-    numAgents = 1
-    LR = 10
-    DF = 30
-    BR = 90
+    delta = 0
+    beta = 0
+    Ite = 0
+    numAgents = 0
+    LR = 0
+    DF = 0
+    BR = 0
 
     def applyPara():
-        global numOfAgents, deltaSpin, balanceRate, discountFactor, betaSpin, iteration, delta, beta, Ite, numAgents, LR, DF, BR
-        delta = deltaSpin.value()
-        beta = betaSpin.value()
-        Ite = iteration.value()
-        LR = learningRate.value()
-        DF = discountFactor.value()
-        BR = balanceRate.value()
-        numAgents = numOfAgents.k
+        global deltaSpin, balanceRate, discountFactor, betaSpin, iteration, delta, beta, Ite, numAgents, LR, DF, BR
+        delta = deltaSpin.value
+        beta = betaSpin.value
+        Ite = iteration.value
+        LR = learningRate.value
+        DF = discountFactor.value
+        BR = balanceRate.value
 
     #Implement Algorithm
     def runAlgorithm():
         global chart, algEx, graph
-        global beta, delta, Ite, numAgents, LR, DF, BR
+        global alpha, delta, Ite, numAgents, LR, DF, BR
+
         matrix = gmap.convertTo2DArray(listMarker)
-        algGraphEx = AntQGraph(matrix)
-        algEx = AntQ(numAgents, Ite, algGraphEx, chart, graph, LR/100, DF/100, delta, beta)
-        algEx.start()
+        kmean = KMean(points=listMarker, dist_matrix=matrix, k=2)
+        kmean.run()
+        print (kmean.centers)
+        print (kmean.clusters)
+        #algGraphEx = AntQGraph(matrix)
+        #algEx = AntQ(len(listMarker), 200, algGraphEx, chart, graph)
+        #algEx.start()
 
     btn2.clicked.connect(showRoute)
     btn1.clicked.connect(applyPara)
