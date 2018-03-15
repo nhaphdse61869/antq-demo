@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import *
 from figure.chart import LengthChartCanvas, GraphCanvas
 from antq.antQ import AntQ
 from antq.antQGraph import AntQGraph
+from cluster.kmeans import KMean
 
 
 class Filter(QSlider):
@@ -401,10 +402,15 @@ if __name__ == '__main__':
     def runAlgorithm():
         global chart, algEx, graph
         global alpha, delta, Ite, numAgents, LR, DF, BR
+
         matrix = gmap.convertTo2DArray(listMarker)
-        algGraphEx = AntQGraph(matrix)
-        algEx = AntQ(len(listMarker), 200, algGraphEx, chart, graph)
-        algEx.start()
+        kmean = KMean(points=listMarker, dist_matrix=matrix, k=2)
+        kmean.run()
+        print (kmean.centers)
+        print (kmean.clusters)
+        #algGraphEx = AntQGraph(matrix)
+        #algEx = AntQ(len(listMarker), 200, algGraphEx, chart, graph)
+        #algEx.start()
 
     btn2.clicked.connect(showRoute)
     btn1.clicked.connect(applyPara)
