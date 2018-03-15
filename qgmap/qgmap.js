@@ -121,13 +121,13 @@ async function displayAllRout(listCoords) {
     }
 }
 
-function displayAllRouteVer2(listCoords) {
+function displayAllRouteVer2(listCoords, bestTour) {
     var directionsService = new google.maps.DirectionsService;
     var waypts = [];
     for(var i = 1; i < listCoords.length; i++) {
         if(i%10==9) {
-            var start = new google.maps.LatLng(listCoords[i-9].latitude, listCoords[i-9].longitude);
-            var end = new google.maps.LatLng(listCoords[i].latitude, listCoords[i].longitude);
+            var start = new google.maps.LatLng(listCoords[bestTour[i-9]].latitude, listCoords[bestTour[i-9]].longitude);
+            var end = new google.maps.LatLng(listCoords[bestTour[i]].latitude, listCoords[bestTour[i]].longitude);
             directionsService.route({
                 origin: start,
                 destination: end,
@@ -146,10 +146,9 @@ function displayAllRouteVer2(listCoords) {
             });
             waypts = [];
         } else if(i==listCoords.length-1) {
-
             var sub = i%10;
-            var start = new google.maps.LatLng(listCoords[i-sub].latitude, listCoords[i-sub].longitude);
-            var end = new google.maps.LatLng(listCoords[i].latitude, listCoords[i].longitude);
+            var start = new google.maps.LatLng(listCoords[bestTour[i-sub]].latitude, listCoords[i-sub].longitude);
+            var end = new google.maps.LatLng(listCoords[bestTour[i]].latitude, listCoords[i].longitude);
             directionsService.route({
                 origin: start,
                 destination: end,
@@ -167,11 +166,12 @@ function displayAllRouteVer2(listCoords) {
                 }
             });
         } else if(i%10!=0) {
-            var cur = new google.maps.LatLng(listCoords[i].latitude, listCoords[i].longitude);
+            var cur = new google.maps.LatLng(listCoords[bestTour[i]].latitude, listCoords[bestTour[i]].longitude);
             waypts.push({
               location: cur,
               stopover: true
             });
+            alert(listCoords[bestTour[i]].latitude);
         }
     }
 }

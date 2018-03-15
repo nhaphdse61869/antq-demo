@@ -1,9 +1,12 @@
 import sys
 from antq.ant import Ant
 import numpy as np
-from PyQt5.QtCore import QThread
+from PyQt5.QtCore import QThread, pyqtSignal
 
 class AntQ(QThread):
+
+    finished_signal = pyqtSignal()
+
     def __init__(self, number_of_ants, num_of_iteration, graph, aqchart, aqgraph, alpha=.1, gamma=.3, delta=1, beta=2, w=10):
         QThread.__init__(self)
         self.number_of_ants = number_of_ants
@@ -70,6 +73,7 @@ class AntQ(QThread):
                 self.aqchart.update_newest_line((i + 1), self.best_tour_len)
             print("Iteration best: %s, %s, %s" % (self.best_tour, self.best_tour_len, self.best_ant,))
         self.aqgraph.draw_path_by_tour(self.best_tour)
+        self.finished_signal.emit()
 
 
 
