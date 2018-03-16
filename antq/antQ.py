@@ -7,7 +7,7 @@ import numpy as np
 
 
 class AntQ(QThread):
-    def __init__(self, number_of_ants, num_of_iteration, graph, alpha=.1, gamma=.3, delta=1, beta=2, w=10, renderFunc=None):
+    def __init__(self, number_of_ants, num_of_iteration, graph, alpha=.1, gamma=.3, delta=1, beta=2, w=10, renderFunc=None, result=None):
         QThread.__init__(self)
         self.number_of_ants = number_of_ants
         self.alpha = alpha
@@ -27,6 +27,7 @@ class AntQ(QThread):
         self.list_avg = []
         self.list_var = []
         self.list_dev = []
+        self.result = result
 
     def delay_val(self):
         p_sum = 0
@@ -97,8 +98,17 @@ class AntQ(QThread):
             iter_avg, iter_variance, iter_deviation = self.iter_run()
             self.delay_ant_q()
 
-            self.renderFunc(i, self.best_tour_len, self.best_tour)
-
+            #self.renderFunc(i, self.best_tour_len, self.best_tour, iter_avg, iter_variance, iter_deviation)
+            #self.iteration_finished.emit(i, self.best_tour_len, self.best_tour, iter_avg, iter_variance, iter_deviation)
+            aIter_result = {}
+            aIter_result["iteration"] = i
+            aIter_result["best_tour_len"] = self.best_tour_len
+            aIter_result["best_tour"] = self.best_tour
+            aIter_result["iter_avg"] = iter_avg
+            aIter_result["iter_variance"] = iter_variance
+            aIter_result["iter_deviation"] = iter_deviation
+            self.result.put(aIter_result)
+            print("CLGT")
             self.best_tours.append(self.best_tour)
             self.best_lens.append(self.best_tour_len)
             self.list_avg.append(iter_avg)
