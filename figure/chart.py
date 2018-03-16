@@ -61,10 +61,8 @@ class GraphCanvas(FigureCanvas):
             self.draw_path(p1, p2)
 
     def draw_path(self, p1, p2):
-        #path, = self.axes.plot([p1[0], p2[0]], [p1[1], p2[1]], "b-")
-        path = plt.Arrow(p1[0], p2[0], p1[1], p2[1])
+        path, = self.axes.plot([p1[0], p2[0]], [p1[1], p2[1]], "b-")
         self.paths[(p1, p2)] = path
-        self.axes.add_patch(path)
         self.draw()
 
     def change_path_apperance(self, p1, p2, alpha=None, color=None):
