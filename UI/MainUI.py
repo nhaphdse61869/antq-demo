@@ -2,6 +2,7 @@
 from PyQt5.QtGui import QFont, QStandardItemModel, QColor
 
 from UI.BlinkingButton import StateWidget
+from queue import Queue
 from UI.FileDialog import *
 from qgmap.common import QGoogleMap
 from PyQt5.QtCore import *
@@ -11,6 +12,7 @@ from antq.antQ import AntQ
 from antq.antQGraph import AntQGraph
 from UI.Filter import Filter
 from UI.ResultFrame import ResultFrame
+from threading import Thread
 import time
 
 class UIThread(QWidget):
@@ -140,16 +142,35 @@ class UIThread(QWidget):
         self.tabG1 = QWidget()
         self.tabG2 = QWidget()
         self.tabG3 = QWidget()
+        self.chartBestLength = LengthChartCanvas()
+        self.chartMeanLength = LengthChartCanvas()
+        self.chartVarianceLength = LengthChartCanvas()
+
         self.tabGraphs.addTab(self.tabG1, "Best Length")
-        self.tabGraphs.addTab(self.tabG2, "Mean Leangth")
-        self.tabGraphs.addTab(self.tabG3, "Variance Leangth")
+        self.tabGraphs.addTab(self.tabG2, "Mean Length")
+        self.tabGraphs.addTab(self.tabG3, "Variance Length")
+
         self.tabG1.layout = QVBoxLayout()
         self.tabG1.setLayout(self.tabG1.layout)
-        self.chart = LengthChartCanvas()
         self.paraSample = QScrollArea()
         self.paraSample.setWidgetResizable(True)
-        self.tabG1.layout.addWidget(self.chart)
+        self.tabG1.layout.addWidget(self.chartBestLength)
         self.tabG1.layout.addWidget(self.paraSample)
+
+        self.tabG2.layout = QVBoxLayout()
+        self.tabG2.setLayout(self.tabG2.layout)
+        self.paraSample = QScrollArea()
+        self.paraSample.setWidgetResizable(True)
+        self.tabG2.layout.addWidget(self.chartMeanLength)
+        self.tabG2.layout.addWidget(self.paraSample)
+
+        self.tabG3.layout = QVBoxLayout()
+        self.tabG3.setLayout(self.tabG3.layout)
+        self.paraSample = QScrollArea()
+        self.paraSample.setWidgetResizable(True)
+        self.tabG3.layout.addWidget(self.chartVarianceLength)
+        self.tabG3.layout.addWidget(self.paraSample)
+
         self.layout1.addWidget(self.tabGraphs)
         # layout1.addWidget(chart)
         # layout1.addWidget(paraSample)
@@ -348,11 +369,41 @@ class UIThread(QWidget):
             qm.information(self,"", "Atleast two points!")
         else :
             self.applyPara()
+            self.algorithm_result = Queue()
             matrix = self.gmap.convertTo2DArray(self.listMarker)
-            algGraphEx = AntQGraph(matrix)
-            algEx = AntQ(self.numAgents, self.Ite, algGraphEx, self.chart, self.graph,
-                         self.LR / 100, self.DF / 100, self.delta, self.beta)
-            algEx.run()
+            self.result_handler = Thread(target=self.drawChart)
+            self.result_handler.start()
+            self.algGraphEx = AntQGraph(matrix)
+            self.algEx = AntQ(self.numAgents, self.Ite, self.algGraphEx,
+                         self.LR / 100, self.DF / 100, self.delta, self.beta, result=self.algorithm_result)
+            self.algEx.start()
+
+
+    def drawChart(self):
+        while True:
+            result = self.algorithm_result.get()
+            iteration = result["iteration"]
+            best_tour_len = result["best_tour_len"]
+            best_tour = result["best_tour"]
+            iter_avg = result["iter_avg"]
+            iter_variance = result["iter_variance"]
+            iter_deviation = result["iter_deviation"]
+            #Draw Graph
+            self.graph.clear_all_line()
+            self.graph.draw_path_by_tour(best_tour)
+
+            #Draw chart
+            if iteration == 0:
+                #add new lines
+                self.chartBestLength.add_new_line(iteration, best_tour_len)
+                self.chartMeanLength.add_new_line(iteration, iter_avg)
+                self.chartVarianceLength.add_new_line(iteration, iter_variance)
+            else:
+                #update lines
+                self.chartBestLength.update_newest_line(iteration, best_tour_len)
+                self.chartMeanLength.update_newest_line(iteration, iter_avg)
+                self.chartVarianceLength.update_newest_line(iteration, iter_variance)
+
 
     def enableSpinBox(self):
         #global Knum, checkK

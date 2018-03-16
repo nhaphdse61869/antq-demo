@@ -7,6 +7,7 @@ from PyQt5 import QtCore, QtWidgets
 import numpy as np
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+from matplotlib import pyplot as plt
 
 
 class GraphCanvas(FigureCanvas):
@@ -18,6 +19,7 @@ class GraphCanvas(FigureCanvas):
         self.points = []
         self.axes.set_axis_off()
         self.axes.autoscale_view()
+
         FigureCanvas.__init__(self, fig)
         self.setParent(parent)
         FigureCanvas.setSizePolicy(self,
@@ -59,8 +61,10 @@ class GraphCanvas(FigureCanvas):
             self.draw_path(p1, p2)
 
     def draw_path(self, p1, p2):
-        path, = self.axes.plot([p1[0], p2[0]], [p1[1], p2[1]], "b-")
+        #path, = self.axes.plot([p1[0], p2[0]], [p1[1], p2[1]], "b-")
+        path = plt.Arrow(p1[0], p2[0], p1[1], p2[1])
         self.paths[(p1, p2)] = path
+        self.axes.add_patch(path)
         self.draw()
 
     def change_path_apperance(self, p1, p2, alpha=None, color=None):
@@ -74,9 +78,9 @@ class GraphCanvas(FigureCanvas):
 class LengthChartCanvas(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
-
         self.axes = fig.add_subplot(111)
         self.lines = []
+
         self.axes.autoscale()
         FigureCanvas.__init__(self, fig)
         self.setParent(parent)
@@ -92,7 +96,8 @@ class LengthChartCanvas(FigureCanvas):
         # Update line
         self.lines[-1].set_xdata(np.append(self.lines[-1].get_xdata(),[x]))
         self.lines[-1].set_ydata(np.append(self.lines[-1].get_ydata(),[y]))
-        self.axes.autoscale()
+        self.axes.relim()
+        self.axes.autoscale_view(True, True, True)
         self.draw()
 
     def add_new_line(self, xdata, ydata):
