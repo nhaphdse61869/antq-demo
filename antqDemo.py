@@ -419,16 +419,15 @@ if __name__ == '__main__':
         numAgents = numOfAgents.k
 
 
-    def draw_chart(i, render_var, global_best):
+    def draw_chart(i, render_var):
         global chart, graph
         # Init chart line
         if i == 0:
             chart.add_new_line([i + 1], [render_var])
         else:
             chart.update_newest_line((i + 1), render_var)
-
-        if i == Ite - 1:
-            graph.draw_path_by_tour(global_best)
+        # if i == Ite - 1:
+        #     graph.draw_path_by_tour(global_best)
 
     #Implement Algorithm
     def runAlgorithm():

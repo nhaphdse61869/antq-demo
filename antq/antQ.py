@@ -97,7 +97,7 @@ class AntQ(QThread):
             iter_avg, iter_variance, iter_deviation = self.iter_run()
             self.delay_ant_q()
 
-            self.renderFunc(i, self.best_tour_len, self.best_tour)
+            self.renderFunc(i, self.best_tour_len)
 
             self.best_tours.append(self.best_tour)
             self.best_lens.append(self.best_tour_len)
