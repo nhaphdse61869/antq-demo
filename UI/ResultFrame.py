@@ -12,31 +12,47 @@ class ResultFrame(QWidget):
         self.initUI()
 
     def initUI(self):
-        self.setGeometry(1345, 0, 300, 680)
-        self.dataGroupBox = QGroupBox("Result")
+        #self.setGeometry(0, 0, 300, 680)
+        self.dataGroupBox = QGroupBox("Log")
+        self.filterGroupBox = QGroupBox("Filter")
+        self.filterLayout = QHBoxLayout()
+        self.algorithmCb = QComboBox()
+        self.algorithmCb.addItem('All')
+        self.algorithmCb.addItem('Ant-Q')
+        self.algorithmCb.addItem('ACO')
+        self.nameSearch = QLineEdit()
+        self.searchBtn = QPushButton('Search')
+        self.filterLayout.addWidget(self.algorithmCb)
+        self.filterLayout.addWidget(self.nameSearch)
+        self.filterLayout.addWidget(self.searchBtn)
+        self.filterGroupBox.setLayout(self.filterLayout)
+        self.algorithmCb.currentIndexChanged.connect(self.selectionchange)
         self.dataView = QTreeView()
         self.dataView.setRootIsDecorated(False)
         self.dataView.setAlternatingRowColors(True)
-
         dataLayout = QHBoxLayout()
         dataLayout.addWidget(self.dataView)
         self.dataGroupBox.setLayout(dataLayout)
 
         self.model = self.createLogModel(self)
         self.dataView.setModel(self.model)
-        self.addLog(self.model, 'A', 'B', '2h')
+        addLog = QPushButton('ok')
+        self.addLog(self.model, addLog, 'B', '2h')
         self.addLog(self.model, 'B', 'C', '30m')
         self.addLog(self.model, 'C', 'D', '5m')
 
         mainLayout = QVBoxLayout()
+        mainLayout.addWidget(self.filterGroupBox)
         mainLayout.addWidget(self.dataGroupBox)
+
         self.setLayout(mainLayout)
-        self.dataView.clicked.connect(self.applyFormerParameters)
-        self.dataGroupBox.hide()
+        #self.dataView.clicked.connect(self.applyFormerParameters)
+        self.dataView.customContextMenuRequested.connect(self.openMenu)
+        #self.dataGroupBox.hide()
 
     def createLogModel(self, parent):
         model = QStandardItemModel(0, 3, parent)
-        model.setHeaderData(self.NUM, Qt.Horizontal, "No")
+        model.setHeaderData(self.NUM, Qt.Horizontal, "Action")
         model.setHeaderData(self.NAME, Qt.Horizontal, "Record Name")
         model.setHeaderData(self.DATE, Qt.Horizontal, "Created Date")
         return model
@@ -48,9 +64,17 @@ class ResultFrame(QWidget):
         model.setData(model.index(0, self.DATE), createdDate)
 
     def applyFormerParameters(self,index):
-        qm = QMessageBox
-        ret = qm.question(self, '', "Are you sure to reset all the values?", qm.Yes | qm.No)
-        if ret == qm.Yes:
-            qm.information(self, '', str(index.row()))
-        else:
-            qm.information(self, '', "Nothing Changed")
+        menu = QMenu()
+        menu.addAction('Rename')
+        menu.addAction('Remove')
+        #menu.exec_(index)
+
+    def selectionchange(self, i):
+        for count in range(self.algorithmCb.count()):
+            self.algorithmCb.itemText(count)
+
+    def openMenu(self, position):
+        menu = QMenu()
+        menu.addAction("Edit object/container")
+        menu.addAction("Edit object")
+        menu.exec_(self.dataView.viewport().mapToGlobal(position))

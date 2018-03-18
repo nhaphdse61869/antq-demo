@@ -104,6 +104,7 @@ class UIThread(QWidget):
         self.formContainer5 = QGroupBox("Iteration")
         self.formLayout4 = QFormLayout()
         self.iteration = QSpinBox()
+        self.iteration.setToolTip("Current Value:")
         self.iteration.setMinimum(0)
         self.iteration.setMaximum(1000)
         self.iteration.setValue(200)
@@ -236,16 +237,16 @@ class UIThread(QWidget):
             QSizePolicy.MinimumExpanding)
         self.tabGM.layout.addWidget(self.gmap)
 
-        self.componentRS = ResultFrame(self)
-        self.componentRS.setWindowOpacity(1)
-        self.showBtn = QPushButton("<", self.componentRS)
-        self.showBtn.resize(30, 50)
-        self.showBtn.move(0, 280)
+        #self.componentRS = ResultFrame(self)
+        #self.componentRS.setWindowOpacity(1)
+        #self.showBtn = QPushButton("<", self.componentRS)
+        #self.showBtn.resize(30, 50)
+        #self.showBtn.move(0, 280)
 
-        self.animation = QPropertyAnimation(self.componentRS, b"geometry")
-        self.animation1 = QPropertyAnimation(self.componentRS, b"opacity")
+        #self.animation = QPropertyAnimation(self.componentRS, b"geometry")
+        #self.animation1 = QPropertyAnimation(self.componentRS, b"opacity")
         self.animation2 = QPropertyAnimation(self.btn1, b"styleSheet")
-        self.showBtn.clicked.connect(self.moveRs)
+        #self.showBtn.clicked.connect(self.moveRs)
         # w.showFullScreen()
         self.setGeometry(0, 40, 0, 0)
         self.resize(2600, 0)
@@ -331,27 +332,6 @@ class UIThread(QWidget):
         size = self.value()
         label.setFont(QFont("Arial", size))
 
-    # animation
-    def moveRs(self):
-        #global componentRS, animation, animation1, showBtn
-        old_pos = QRect(1345, 0, 300, 680)
-        if self.componentRS.pos().x() == old_pos.x():
-            self.animation.setDuration(1000)
-            self.animation.setStartValue(QRect(1345, 0, 300, 680))
-            self.animation.setEndValue(QRect(1070, 0, 300, 680))
-            self.animation.start()
-            self.showBtn.setText(">")
-            self.componentRS.dataGroupBox.show()
-        else:
-            self.animation.setDuration(50)
-            self.animation.setStartValue(QRect(1070, 0, 300, 680))
-            self.animation.setEndValue(QRect(1345, 0, 300, 680))
-            self.animation.start()
-            self.showBtn.setText("<")
-            self.componentRS.dataGroupBox.hide()
-
-
-
     def applyPara(self):
         #global numOfAgents, deltaSpin, balanceRate, discountFactor, betaSpin, iteration, delta, beta, Ite, numAgents, LR, DF, BR
         self.delta = self.deltaSpin.value()
@@ -377,7 +357,6 @@ class UIThread(QWidget):
             self.algEx = AntQ(self.numAgents, self.Ite, self.algGraphEx,
                          self.LR / 100, self.DF / 100, self.delta, self.beta, result=self.algorithm_result)
             self.algEx.start()
-
 
     def drawChart(self):
         while True:
