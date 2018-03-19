@@ -7,7 +7,6 @@ from PyQt5 import QtCore, QtWidgets
 import numpy as np
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-from matplotlib import pyplot as plt
 
 
 class GraphCanvas(FigureCanvas):
@@ -50,6 +49,7 @@ class GraphCanvas(FigureCanvas):
     def clear_all_line(self):
         for path in self.paths.values():
             path.remove()
+        self.paths.clear()
         self.draw()
 
     def draw_path_by_tour(self, tour):

@@ -108,7 +108,6 @@ class AntQ(QThread):
             aIter_result["iter_variance"] = iter_variance
             aIter_result["iter_deviation"] = iter_deviation
             self.result.put(aIter_result)
-            print("CLGT")
             self.best_tours.append(self.best_tour)
             self.best_lens.append(self.best_tour_len)
             self.list_avg.append(iter_avg)
