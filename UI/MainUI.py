@@ -3,6 +3,7 @@ from PyQt5.QtGui import QFont, QStandardItemModel, QColor
 
 from UI.BlinkingButton import StateWidget
 from queue import Queue
+import sys
 from UI.FileDialog import *
 from qgmap.common import QGoogleMap
 from PyQt5.QtCore import *
@@ -351,6 +352,7 @@ class UIThread(QWidget):
             self.applyPara()
             self.algorithm_result = Queue()
             matrix = self.gmap.convertTo2DArray(self.listMarker)
+            sys.stdout.flush()
             self.result_handler = Thread(target=self.drawChart)
             self.result_handler.start()
             self.algGraphEx = AntQGraph(matrix)
