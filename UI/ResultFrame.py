@@ -45,7 +45,6 @@ class ResultFrame(QWidget):
         self.addLog(self.model, 'LOG1', 'Ant-Q Log DataSet1', '21-3-2018')
         self.addLog(self.model, 'LOG2', 'ACO Log DataSet2', '21-3-2018')
         self.addLog(self.model, 'LOG3', 'FI Log DataSet1', '19-3-2018')
-
         mainLayout = QVBoxLayout()
         mainLayout.addWidget(self.filterGroupBox)
         mainLayout.addWidget(self.dataGroupBox)
@@ -54,12 +53,14 @@ class ResultFrame(QWidget):
         self.dataView.clicked.connect(self.openDetail)
         self.dataView.setContextMenuPolicy(Qt.CustomContextMenu)
         self.dataView.customContextMenuRequested.connect(self.openMenu)
+        #self.dataView.setItem
         self.menu = QMenu()
         self.renameAction = QAction(QIcon('exit24.png'), 'Rename', self)
         self.removeAction = QAction(QIcon('exit24.png'), 'Remove', self)
         self.menu.addAction(self.renameAction)
         self.menu.addAction(self.removeAction)
         self.renameAction.triggered.connect(self.renameLogItem)
+        self.removeAction.triggered.connect(self.removeLog)
 
 
         #self.dataGroupBox.hide()
@@ -77,12 +78,17 @@ class ResultFrame(QWidget):
         model.setData(model.index(0, self.NAME), recordName)
         model.setData(model.index(0, self.DATE), createdDate)
 
+    def removeLog(self):
+        root = self.dataView.model().invisibleRootItem()
+        root.removeRow(self.currentPos.row())
+
     def selectionchange(self, i):
         for count in range(self.algorithmCb.count()):
             self.algorithmCb.itemText(count)
 
     def openMenu(self, position):
-        self.currentPos = position
+        indexes = self.dataView.selectedIndexes()
+        self.currentPos = indexes[0]
         self.menu.exec_(self.dataView.viewport().mapToGlobal(position))
 
     def iterItems(self, root):
@@ -97,10 +103,10 @@ class ResultFrame(QWidget):
             yield from recurse(root)
 
     def renameLogItem(self):
-        model = self.dataView.selectionModel()
-        item = model.currentIndex()
-        qm = QMessageBox
-        qm.information(self, "", str(item.row))
+        root = self.dataView.model()
+        text, ok = QInputDialog.getText(self, 'Change Log Name', 'Enter New Log Name:')
+        if ok:
+            root.setData(root.index(self.currentPos.row(), 1), text)
 
     def openDetail(self,pos):
         detailLog = DetailLog(self)
