@@ -1,7 +1,6 @@
 
 from PyQt5.QtGui import QFont, QStandardItemModel, QColor
-
-from UI.BlinkingButton import StateWidget
+from threading import Thread
 from queue import Queue
 from UI.FileDialog import *
 from qgmap.common import QGoogleMap
@@ -9,17 +8,16 @@ from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from figure.chart import LengthChartCanvas, GraphCanvas
 from antq.antQ import AntQ
-from antq.antQGraph import AntQGraph
 from UI.Filter import Filter
 from UI.ResultFrame import ResultFrame
-from threading import Thread
-import time
+from UI.result import ResultHandler
 
 class UIThread(QWidget):
 
     def __init__(self):
         super().__init__()
         self.listMarker = []
+        self.best_tour = []
         self.numMarker = 0
         self.h = QVBoxLayout()
         self.mainLayout = QVBoxLayout(self)
@@ -311,6 +309,7 @@ class UIThread(QWidget):
             title="Move me!"
         ))
         self.graph.add_coord((latitude, longitude))
+        self.graph.draw_graph()
         self.numOfAgents.changeMax(self.numMarker)
         print("LClick on ", latitude, longitude)
 
@@ -369,41 +368,53 @@ class UIThread(QWidget):
             qm.information(self,"", "Atleast two points!")
         else :
             self.applyPara()
-            self.algorithm_result = Queue()
-            matrix = self.gmap.convertTo2DArray(self.listMarker)
+            self.result_queue = Queue()
+            #matrix = self.gmap.convertTo2DArray(self.listMarker)
+
+            #Create result handler
+            self.charts = {}
+            self.charts["bestLength"] = self.chartBestLength
+            self.charts["meanLength"] = self.chartMeanLength
+            self.charts["varianceLength"] = self.chartVarianceLength
+            #self.result_handler = ResultHandler(self.graph, self.charts, "antq", self.result_queue)
+            #self.result_handler.start()
+
             self.result_handler = Thread(target=self.drawChart)
             self.result_handler.start()
-            self.algGraphEx = AntQGraph(matrix)
-            self.algEx = AntQ(self.numAgents, self.Ite, self.algGraphEx,
-                         self.LR / 100, self.DF / 100, self.delta, self.beta, result=self.algorithm_result)
-            self.algEx.start()
 
+            #Perform algorithm
+            #algGraphEx = AntQGraph(matrix)
+            self.algEx = AntQ(self.numAgents, self.Ite, self.listMarker,
+                              self.LR / 100, self.DF / 100, self.delta, self.beta, result=self.result_queue)
+            self.algEx.start()
 
     def drawChart(self):
         while True:
-            result = self.algorithm_result.get()
+            result = self.result_queue.get()
             iteration = result["iteration"]
             best_tour_len = result["best_tour_len"]
             best_tour = result["best_tour"]
             iter_avg = result["iter_avg"]
             iter_variance = result["iter_variance"]
             iter_deviation = result["iter_deviation"]
-            #Draw Graph
-            self.graph.clear_all_line()
-            self.graph.draw_path_by_tour(best_tour)
 
-            #Draw chart
+            # Draw Graph
+            if self.best_tour != best_tour:
+                self.best_tour = best_tour
+                self.graph.clear_graph_tour()
+                self.graph.draw_tour(best_tour)
+
+            # Draw chart
             if iteration == 0:
-                #add new lines
+                # add new lines
                 self.chartBestLength.add_new_line(iteration, best_tour_len)
                 self.chartMeanLength.add_new_line(iteration, iter_avg)
                 self.chartVarianceLength.add_new_line(iteration, iter_variance)
             else:
-                #update lines
+                # update lines
                 self.chartBestLength.update_newest_line(iteration, best_tour_len)
                 self.chartMeanLength.update_newest_line(iteration, iter_avg)
                 self.chartVarianceLength.update_newest_line(iteration, iter_variance)
-
 
     def enableSpinBox(self):
         #global Knum, checkK
@@ -413,9 +424,7 @@ class UIThread(QWidget):
             self.Knum.setDisabled(True)
 
     def test(self):
-        self.animation2.setDuration(1000)
-        self.animation2.setLoopCount(1)
-        self.animation2.setStartValue(QColor(192,224,192))
-        self.animation2.setKeyValueAt(0.12, QColor(192,192,192))
-        self.animation2.setEndValue(QColor(212,208,200))
-        self.animation2.start()
+        #mainThr = self.thread()
+
+        yield self.algEx
+

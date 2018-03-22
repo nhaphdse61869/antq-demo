@@ -3,7 +3,7 @@ import matplotlib
 # Make sure that we are using QT5
 matplotlib.use('Qt5Agg')
 from PyQt5 import QtCore, QtWidgets
-
+import networkx as nx
 import numpy as np
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -14,10 +14,13 @@ class GraphCanvas(FigureCanvas):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
         fig.tight_layout()
-        self.paths = {}
         self.points = []
         self.axes.set_axis_off()
         self.axes.autoscale_view()
+        self.tour_edges = []
+        self.G = nx.Graph()
+        self.pos = {}
+        self.pos_layout = {}
 
         FigureCanvas.__init__(self, fig)
         self.setParent(parent)
@@ -27,51 +30,51 @@ class GraphCanvas(FigureCanvas):
         FigureCanvas.updateGeometry(self)
 
     def init_coord_data(self, points):
-        prevPoint = points[0]
-        for i in range(len(points)):
-            self.add_coord(points[i])
-            if i > 0:
-                self.draw_path(prevPoint, points[i])
-            prevPoint = points[i]
-        if len(points) > 2:
-            self.draw_line(points[-1], points[0])
+        for point in points:
+            self.add_coord(point)
+
+        self.draw_graph()
+
+    def draw_graph(self):
+        # Draw to network
+        nx.draw_networkx_nodes(self.G, pos=self.pos_layout, node_size=20, node_color="red", ax=self.axes)
+        nx.draw_networkx_edges(self.G, pos=self.pos_layout, alpha=0.1, ax=self.axes)
+        # Draw to screen
+        self.draw()
+
+    def clear_graph_tour(self):
+        self.axes.clear()
+        self.axes.set_axis_off()
         self.draw()
 
     def add_coord(self, point):
-        self.axes.plot([point[0]], [point[1]], "ro")
-        self.points.append(point)
+        #Add point
+        self.points.append((point[0], point[1]))
+        self.G.add_node(str(len(self.points) - 1), pos=(point[0], point[1]))
+
+        #Update position
+        self.pos[str(len(self.points) - 1)] = (point[0], point[1])
+        self.pos_layout = nx.spring_layout(G=self.G, pos=self.pos)
+
+        #Add edge
+        for i in range(len(self.points) - 1):
+            self.G.add_edge(str(i), str(len(self.points) - 1))
+
+    def draw_tour(self, tour):
+        self.tour_edges = []
+        # Add tour edge
+        for i in range(len(tour) - 1):
+            self.tour_edges.append((str(tour[i]), str(tour[i + 1])))
+        self.tour_edges.append((str(tour[-1]), str(tour[0])))
+
+        #Draw background graph
+        nx.draw_networkx_nodes(self.G, pos=self.pos_layout, node_size=20, node_color="red", ax=self.axes)
+        nx.draw_networkx_edges(self.G, pos=self.pos_layout, alpha=0.1, ax=self.axes)
+
+        #Draw graph tour
+        nx.draw_networkx_edges(self.G, pos=self.pos_layout, edgelist=self.tour_edges, alpha=1,
+                               edge_color='blue', ax=self.axes)
         self.draw()
-
-    def clear_graph(self):
-        self.axes.clear()
-        self.draw()
-
-    def clear_all_line(self):
-        for path in self.paths.values():
-            path.remove()
-        self.paths.clear()
-        self.draw()
-
-    def draw_path_by_tour(self, tour):
-        for i in range(len(tour)):
-            p1 = self.points[tour[i]]
-            p2 = self.points[tour[0]]
-            if i < (len(tour) - 1):
-                p2 = self.points[tour[i+1]]
-            self.draw_path(p1, p2)
-
-    def draw_path(self, p1, p2):
-        path, = self.axes.plot([p1[0], p2[0]], [p1[1], p2[1]], "b-")
-        self.paths[(p1, p2)] = path
-        self.draw()
-
-    def change_path_apperance(self, p1, p2, alpha=None, color=None):
-        if alpha != None:
-            self.paths[(p1, p2)].set_alpha(alpha)
-        if color != None:
-            self.paths[(p1, p2)].set_color(color)
-        self.draw()
-
 
 class LengthChartCanvas(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
@@ -108,3 +111,36 @@ class LengthChartCanvas(FigureCanvas):
     def clear_graph(self):
         self.lines.clear()
         self.axes.clear()
+
+class ColumnChartCanvas(FigureCanvas):
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+        self.axes.autoscale_view()
+        self.bar_width = 0.2
+
+        FigureCanvas.__init__(self, fig)
+        self.setParent(parent)
+
+        FigureCanvas.setSizePolicy(self,
+                                   QtWidgets.QSizePolicy.Expanding,
+                                   QtWidgets.QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry(self)
+
+    def create_bar(self, number_of_dataset, data_of_algorithms, name_of_algorithms):
+        #X axis
+        x_label = []
+        for i in range(number_of_dataset):
+            x_label.append("Dataset {}".format((i+1)))
+
+        number_of_dataset = np.arange(number_of_dataset)
+
+        for i in range(len(data_of_algorithms)):
+            self.axes.bar(number_of_dataset + self.bar_width * i, data_of_algorithms[i], width= self.bar_width, align='center', label=name_of_algorithms[i])
+
+        self.axes.set_xlabel("Algorithm")
+        self.axes.set_ylabel("Length")
+        self.axes.set_xticks(number_of_dataset + (self.bar_width * (len(number_of_dataset) - 1))/2)
+        self.axes.set_xticklabels(x_label)
+        self.axes.legend()
+        self.draw()

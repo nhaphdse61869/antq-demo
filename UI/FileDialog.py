@@ -39,4 +39,5 @@ class OpenFileDialog(QWidget):
                     title="Move me!"
                 ))
                 self.graph.add_coord((marker['latitude'],  marker['longitude']))
+            self.graph.draw_graph()
                 #self.numOfAgents.changeMax(UIThread.numMarker)
