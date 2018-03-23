@@ -1,6 +1,6 @@
 from PyQt5 import QtGui
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QItemSelectionModel
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from UI.DetailLog import *
@@ -45,22 +45,27 @@ class ResultFrame(QWidget):
         self.addLog(self.model, 'LOG1', 'Ant-Q Log DataSet1', '21-3-2018')
         self.addLog(self.model, 'LOG2', 'ACO Log DataSet2', '21-3-2018')
         self.addLog(self.model, 'LOG3', 'FI Log DataSet1', '19-3-2018')
+        self.dataView.setCurrentIndex(self.model.index(0, 0));
+        #self.dataView.selectionModel().setCurrentIndex(self.model.createIndex( 0, 0), QItemSelectionModel.SelectCurrent)
         mainLayout = QVBoxLayout()
         mainLayout.addWidget(self.filterGroupBox)
         mainLayout.addWidget(self.dataGroupBox)
 
         self.setLayout(mainLayout)
-        self.dataView.clicked.connect(self.openDetail)
+        #self.dataView.clicked.connect(self.openDetail)
         self.dataView.setContextMenuPolicy(Qt.CustomContextMenu)
         self.dataView.customContextMenuRequested.connect(self.openMenu)
         #self.dataView.setItem
         self.menu = QMenu()
         self.renameAction = QAction(QIcon('exit24.png'), 'Rename', self)
         self.removeAction = QAction(QIcon('exit24.png'), 'Remove', self)
+        self.viewDetailAction = QAction(QIcon('exit24.png'), 'View Detail', self)
         self.menu.addAction(self.renameAction)
         self.menu.addAction(self.removeAction)
+        self.menu.addAction(self.viewDetailAction)
         self.renameAction.triggered.connect(self.renameLogItem)
         self.removeAction.triggered.connect(self.removeLog)
+        self.viewDetailAction.triggered.connect(self.openDetail)
 
 
         #self.dataGroupBox.hide()
@@ -88,8 +93,9 @@ class ResultFrame(QWidget):
 
     def openMenu(self, position):
         indexes = self.dataView.selectedIndexes()
-        self.currentPos = indexes[0]
-        self.menu.exec_(self.dataView.viewport().mapToGlobal(position))
+        if indexes != None:
+            self.currentPos = indexes[0]
+            self.menu.exec_(self.dataView.viewport().mapToGlobal(position))
 
     def iterItems(self, root):
         def recurse(parent):
@@ -108,12 +114,10 @@ class ResultFrame(QWidget):
         if ok:
             root.setData(root.index(self.currentPos.row(), 1), text)
 
-    def openDetail(self,pos):
+    def openDetail(self):
         detailLog = DetailLog(self)
         root = self.dataView.model().invisibleRootItem()
-        child = root.child(pos.row(),0)
+        child = root.child(self.currentPos.row(),0)
         qm = QMessageBox
         qm.information(self, "", child.text())
         detailLog.show()
-
-
