@@ -34,10 +34,13 @@ class ATSPReader:
                     number_of_distance = 0
                     distance_data = []
 
-    def get_dist_matrix(self):
+        #Conver string to float
         for i in range(len(self.dist_matrix)):
             for j in range(len(self.dist_matrix)):
                 self.dist_matrix[i][j] = float(self.dist_matrix[i][j].strip())
+
+    def get_dist_matrix(self):
+
         return self.dist_matrix
 
 if __name__ == "__main__":
