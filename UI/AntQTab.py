@@ -43,7 +43,7 @@ class AntQTab(QWidget):
         self.betaSpin.setValue(2)
         self.formLayout.addRow(QLabel("β:"), self.betaSpin)
         self.formContainer1.setLayout(self.formLayout)
-
+        self.test=1
         self.formContainer2 = QGroupBox("Learning Rate")
         self.formLayout1 = QFormLayout()
         self.learningRate = QSpinBox()
