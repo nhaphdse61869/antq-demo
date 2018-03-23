@@ -10,16 +10,14 @@ import numpy as np
 
 
 class AntQ(QThread):
-    def __init__(self, number_of_ants, num_of_iteration, listMarker, alpha=.1, gamma=.3, delta=1, beta=2, w=10, renderFunc=None, result=None):
+    def __init__(self, number_of_ants, num_of_iteration, graph, alpha=.1, gamma=.3, delta=1, beta=2, w=10, renderFunc=None, result=None):
         QThread.__init__(self)
         self.number_of_ants = number_of_ants
         self.alpha = alpha
         self.gamma = gamma
         self.delta = delta
         self.beta = beta
-        #create antq graph
-        self.listMarker = listMarker
-        self.graph = None
+        self.graph = graph
         self.num_of_iteration = num_of_iteration
         self.w = w
         self.best_tour = []
@@ -58,7 +56,7 @@ class AntQ(QThread):
     def create_ants(self):
         self.ants = []
         nodes = list(range(0, self.graph.num_node))
-        starting_nodes = np.random.choice(nodes, self.number_of_ants, replace=False)
+        starting_nodes = np.random.choice(nodes, self.number_of_ants, replace=True)
         for i in range(0, self.number_of_ants):
             ant = Ant(i, self, starting_nodes[i])
             self.ants.append(ant)
@@ -98,8 +96,6 @@ class AntQ(QThread):
         return iter_avg, iter_variance, iter_deviation
 
     def run(self):
-        matrix = distance.convertTo2DArray(self.listMarker)
-        self.graph =  AntQGraph(matrix)
         for i in range(0, self.num_of_iteration):
             print("Iteration[%s]" % i)
             iter_avg, iter_variance, iter_deviation = self.iter_run()
