@@ -35,4 +35,11 @@ class ATSPReader:
                     distance_data = []
 
     def get_dist_matrix(self):
+        for i in range(len(self.dist_matrix)):
+            for j in range(len(self.dist_matrix)):
+                self.dist_matrix[i][j] = float(self.dist_matrix[i][j].strip())
         return self.dist_matrix
+
+if __name__ == "__main__":
+    atsp = ATSPReader("ft53.atsp")
+    print(atsp.get_dist_matrix())

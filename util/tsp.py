@@ -8,6 +8,7 @@ class TSPFileReader:
         self.cities_set = []
         self.cities_tups = []
         self.cities_dict = {}
+        self.dist_matrix = []
 
         # Read tsp file
         with open(self.tsp_file_name) as f:
@@ -53,10 +54,22 @@ class TSPFileReader:
             self.cities_dict[city] = self.cities_tups[city - 1]
 
     def upper_row_type_reader(self, data):
+
         pass
 
     def full_matrix_type_reader(self, data):
-        pass
+        number_of_distance = 0
+        distance_data = []
+        # Convert to dist matrix
+        for item in data:
+            row_distance = item.split()
+            if len(row_distance) > 0 and row_distance[0].isdigit():
+                number_of_distance = number_of_distance + len(row_distance)
+                distance_data.extend(row_distance)
+                if number_of_distance >= int(self.dimension):
+                    self.dist_matrix.append(distance_data)
+                    number_of_distance = 0
+                    distance_data = []
 
     def get_dist_matrix(self):
         dist_matrix = [[0 for x in range(self.dimension)] for y in range(self.dimension)]
@@ -66,6 +79,8 @@ class TSPFileReader:
                 city2 = self.cities_tups[j]
                 dist_matrix[i][j] = self.compute_distance(city1[0], city1[1], city2[0], city2[1])
         return dist_matrix
+
+
 
     def compute_distance(self, x1, y1, x2, y2):
         return math.sqrt(math.pow(x1 - x2, 2.0) + math.pow(y1 - y2, 2.0))

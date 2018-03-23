@@ -1,20 +1,17 @@
 import math
 import random
-import visualize_tsp
-import matplotlib.pyplot as plt
 
 
 class SimAnneal(object):
-    def __init__(self, coords, T=-1, alpha=-1, stopping_T=-1, stopping_iter=-1):
-        self.coords = coords
-        self.N = len(coords)
+    def __init__(self, dist_matrix, T=-1, alpha=-1, stopping_T=-1, stopping_iter=-1):
+        self.N = len(dist_matrix)
         self.T = math.sqrt(self.N) if T == -1 else T
         self.alpha = 0.995 if alpha == -1 else alpha
         self.stopping_temperature = 0.00000001 if stopping_T == -1 else stopping_T
         self.stopping_iter = 100000 if stopping_iter == -1 else stopping_iter
         self.iteration = 1
 
-        self.dist_matrix = self.to_dist_matrix(coords)
+        self.dist_matrix = dist_matrix
         self.nodes = [i for i in range(self.N)]
 
         self.cur_solution = self.initial_solution()
@@ -43,22 +40,6 @@ class SimAnneal(object):
             solution.append(cur_node)
 
         return solution
-
-    def dist(self, coord1, coord2):
-        """
-        Euclidean distance
-        """
-        return round(math.sqrt(math.pow(coord1[0] - coord2[0], 2) + math.pow(coord1[1] - coord2[1], 2)), 4)
-
-    def to_dist_matrix(self, coords):
-        """
-        Returns nxn nested list from a list of length n
-        Used as distance matrix: mat[i][j] is the distance between node i and j
-        'coords' has the structure [[x1,y1],...[xn,yn]]
-        """
-        n = len(coords)
-        mat = [[self.dist(coords[i], coords[j]) for i in range(n)] for j in range(n)]
-        return mat
 
     def fitness(self, sol):
         """ Objective value of a solution """
