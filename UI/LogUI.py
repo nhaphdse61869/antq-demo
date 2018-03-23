@@ -20,7 +20,7 @@ class UILog(QWidget):
         chartContainer = QScrollArea()
         leftConLayout.addLayout(topLeftConLayout)
         leftConLayout.addLayout(botLeftConlayout)
-        logListTree = ResultFrame(self)
+        self.logListTree = ResultFrame(self)
         tableLog = TableLog(self)
         tableLog.setMinimumSize(1000,300)
 
@@ -33,8 +33,13 @@ class UILog(QWidget):
         formContainerLayout.addWidget(compareBtn)
         formContainer.setLayout(formContainerLayout)
 
-        rightConLayout.addWidget(logListTree)
+        rightConLayout.addWidget(self.logListTree)
         rightConLayout.addWidget(formContainer)
         topLeftConLayout.addWidget(tableLog)
         botLeftConlayout.addWidget(chartContainer)
         self.setLayout(containerLayout)
+        addToTableBtn.clicked.connect(self.testCurrentPos)
+
+    def testCurrentPos(self):
+        qm = QMessageBox
+        qm.information(self, "", str(self.logListTree.currentKey))

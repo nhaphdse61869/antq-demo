@@ -66,8 +66,8 @@ class ResultFrame(QWidget):
         self.renameAction.triggered.connect(self.renameLogItem)
         self.removeAction.triggered.connect(self.removeLog)
         self.viewDetailAction.triggered.connect(self.openDetail)
-
-
+        self.currentKey = 'None'
+        self.dataView.clicked.connect(self.getCurrentKeyLog)
         #self.dataGroupBox.hide()
 
     def createLogModel(self, parent):
@@ -121,3 +121,11 @@ class ResultFrame(QWidget):
         qm = QMessageBox
         qm.information(self, "", child.text())
         detailLog.show()
+
+    def getCurrentKeyLog(self):
+        indexes = self.dataView.selectedIndexes()
+        if indexes != None:
+            self.currentPos = indexes[0]
+            root = self.dataView.model().invisibleRootItem()
+            child = root.child(self.currentPos.row(), 0)
+            self.currentKey = child.text()

@@ -22,7 +22,7 @@ class OpenFileDialog(QWidget):
     def initUI(self):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
-        self.openFileNameDialog()
+        self.openAtspFileNameDialog()
 
     def openFileNameDialog(self):
         options = QFileDialog.Options()
@@ -39,4 +39,15 @@ class OpenFileDialog(QWidget):
                     title="Move me!"
                 ))
                 self.graph.add_coord((marker['latitude'],  marker['longitude']))
-                #self.numOfAgents.changeMax(UIThread.numMarker)
+            self.graph.draw_graph()
+
+    def openAtspFileNameDialog(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
+                                                  "All Files (*);;Python Files (*.py)", options=options)
+        if fileName:
+            if fileName.lower().endswith('.atsp'):
+                print('atsp')
+            elif fileName.lower().endswith('.tsp'):
+                print('tsp')

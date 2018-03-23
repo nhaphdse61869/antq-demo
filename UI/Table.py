@@ -42,7 +42,7 @@ class TableLog(QWidget):
         # table selection change
         self.tableWidget.doubleClicked.connect(self.on_click)
 
-    def addTableItem(self, item):
+    def addTableItem(self):
         row = self.tableWidget.rowCount()
         self.tableWidget.insertRow(row)
         self.filesTable.setItem(row, 0, '')

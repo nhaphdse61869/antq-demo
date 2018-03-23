@@ -237,7 +237,7 @@ class QGoogleMap(QWebEngineView):
         api_key = "AIzaSyCNHayAJYOTf-gi30fTgbA3SEXpjj3LDFM"
         gmaps = googlemaps.Client(key=api_key)
 
-        dis_mat = [[0 for x in range(len(listMarker))] for y in range(len(listMarker))]
+        dis_mat = [[1 for x in range(len(listMarker))] for y in range(len(listMarker))]
         for i in range(len(listMarker)):
             for j in range(len(listMarker)):
                 if i == j :
@@ -247,4 +247,5 @@ class QGoogleMap(QWebEngineView):
                                                      destinations=(listMarker[j]['latitude'],listMarker[j]['longitude']),
                                                      mode="driving")
                     dis_mat[i][j] = duration['rows'][0]['elements'][0]['duration']['value']
+                print(dis_mat)
         return dis_mat

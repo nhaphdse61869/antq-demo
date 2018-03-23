@@ -1,8 +1,11 @@
 import sys
+import time
 
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from antq.ant import Ant
+from antq.antQGraph import AntQGraph
+import UI.distance as distance
 import numpy as np
 
 
@@ -53,7 +56,7 @@ class AntQ(QThread):
     def create_ants(self):
         self.ants = []
         nodes = list(range(0, self.graph.num_node))
-        starting_nodes = np.random.choice(nodes, self.number_of_ants, replace=False)
+        starting_nodes = np.random.choice(nodes, self.number_of_ants, replace=True)
         for i in range(0, self.number_of_ants):
             ant = Ant(i, self, starting_nodes[i])
             self.ants.append(ant)
@@ -97,7 +100,6 @@ class AntQ(QThread):
             print("Iteration[%s]" % i)
             iter_avg, iter_variance, iter_deviation = self.iter_run()
             self.delay_ant_q()
-
             #self.renderFunc(i, self.best_tour_len, self.best_tour, iter_avg, iter_variance, iter_deviation)
             #self.iteration_finished.emit(i, self.best_tour_len, self.best_tour, iter_avg, iter_variance, iter_deviation)
             aIter_result = {}
@@ -107,8 +109,7 @@ class AntQ(QThread):
             aIter_result["iter_avg"] = iter_avg
             aIter_result["iter_variance"] = iter_variance
             aIter_result["iter_deviation"] = iter_deviation
-            self.result.put(aIter_result)
-            print("CLGT")
+            self.result.put(aIter_result, False)
             self.best_tours.append(self.best_tour)
             self.best_lens.append(self.best_tour_len)
             self.list_avg.append(iter_avg)
