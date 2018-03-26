@@ -112,6 +112,38 @@ class LengthChartCanvas(FigureCanvas):
         self.lines.clear()
         self.axes.clear()
 
+class MultiLengthChartCanvas(FigureCanvas):
+    def __init__(self, parent=None, number_of_chart=1, width=5, height=4, dpi=100):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.number_of_chart = number_of_chart
+        self.list_axes = []
+
+        for i in range(number_of_chart):
+            axes = fig.add_subplot(1, i + 1, 1)
+            axes.autoscale()
+            self.list_axes.append(axes)
+
+        self.axes_lines = [[] for i in range(number_of_chart)]
+
+        FigureCanvas.__init__(self, fig)
+        self.setParent(parent)
+        FigureCanvas.setSizePolicy(self,
+                                   QtWidgets.QSizePolicy.Expanding,
+                                   QtWidgets.QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry(self)
+
+    def add_new_line(self, chart_index ,xdata, ydata):
+        # Add new line
+        aline, = self.list_axes[chart_index].plot(xdata, ydata)
+        self.axes_lines[chart_index].append(aline)
+        self.draw()
+        return aline
+
+    def clear_graph(self):
+        for i in range(self.number_of_chart):
+            self.list_axes[i].clear()
+            self.axes_lines[i].clear()
+
 class ColumnChartCanvas(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
@@ -140,7 +172,7 @@ class ColumnChartCanvas(FigureCanvas):
 
         self.axes.set_xlabel("Algorithm")
         self.axes.set_ylabel("Length")
-        self.axes.set_xticks(number_of_dataset + (self.bar_width * (len(number_of_dataset) - 1))/2)
+        self.axes.set_xticks(number_of_dataset + (self.bar_width/2) * (len(name_of_algorithms) - 1))
         self.axes.set_xticklabels(x_label)
         self.axes.legend()
         self.draw()

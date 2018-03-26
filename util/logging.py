@@ -1,4 +1,6 @@
 import json
+import sys
+import numpy
 
 log_filename = "logging.json"
 dataset_filename = "dataset.json"
@@ -13,7 +15,7 @@ class LogIO:
         list_log = []
 
         #Open log file
-        f = open(self.log_filename)
+        f = open(self.log_filename, "r+")
         #Read list log
         lines = f.readlines()
         for line in lines:
@@ -32,10 +34,27 @@ class LogIO:
                 list_log[i].result = self.get_result_by_log_key(list_log[i].key)
         return list_log
 
+    def get_log(self, log_key):
+        log_object = None
+        f = open(self.log_filename, "r+")
+        lines = f.readlines()
+        for line in lines:
+            log_json = json.loads(line)
+            if log_json["key"] == log_key:
+                log_object = Log(log_json["key"], log_json["name"], log_json["algorithm"],
+                                 log_json["number_of_point"], log_json["created_date"], log_json["parameter"])
+        # Close log file
+        f.close()
+
+        #Get dataset and result
+        log_object.dataset = self.get_dataset_by_log_key(log_object.key)
+        log_object.result = self.get_result_by_log_key(log_object.key)
+        return log_object
+
     def get_dataset_by_log_key(self, log_key):
         dataset = []
         # Open dataset file
-        f = open(self.dataset_filename)
+        f = open(self.dataset_filename, "r+")
         # Read list dataset
         lines = f.readlines()
         for line in lines:
@@ -49,7 +68,7 @@ class LogIO:
     def get_result_by_log_key(self, log_key):
         result = []
         # Open result file
-        f = open(self.result_filename)
+        f = open(self.result_filename, "r+")
         # Read list result
         lines = f.readlines()
         for line in lines:
@@ -63,7 +82,7 @@ class LogIO:
     def get_new_log_key(self):
         key = 0
         # Open log file
-        f = open(self.log_filename)
+        f = open(self.log_filename, "r+")
         # Read list log
         lines = f.readlines()
         for line in lines:
@@ -95,11 +114,15 @@ class LogIO:
         f.write("\n")
         f.close()
 
-        #Write result file
-        f = open(self.result_filename, "a+")
-        json.dump(result_json, f)
-        f.write("\n")
-        f.close()
+        try:
+            #Write result file
+            f_result = open(self.result_filename, "a+")
+            json.dump(result_json, f_result ,cls=MyEncoder)
+            f_result.write("\n")
+            f_result.close()
+        except:
+            (type, value, traceback) = sys.exc_info()
+            sys.excepthook(type, value, traceback)
 
     def rename_log(self, log_key, log_new_name):
         #Load logs
@@ -131,6 +154,7 @@ class LogIO:
             log_json = json.loads(line)
             if log_json["key"] != log_key:
                 json.dump(log_json, f)
+                f.write("\n")
         f.close()
 
         # Remove in dataset file
@@ -143,6 +167,7 @@ class LogIO:
             log_json = json.loads(line)
             if log_json["log_key"] != log_key:
                 json.dump(log_json, f)
+                f.write("\n")
         f.close()
 
         # Remove in result file
@@ -155,7 +180,19 @@ class LogIO:
             log_json = json.loads(line)
             if log_json["log_key"] != log_key:
                 json.dump(log_json, f)
+                f.write("\n")
         f.close()
+
+class MyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, numpy.integer):
+            return int(obj)
+        elif isinstance(obj, numpy.floating):
+            return float(obj)
+        elif isinstance(obj, numpy.ndarray):
+            return obj.tolist()
+        else:
+            return super(MyEncoder, self).default(obj)
 
 class Log:
     def __init__(self, key, name, algorithm, number_of_point, created_date, parameter, dataset=None, result=None):
@@ -179,3 +216,6 @@ class Log:
         return log_dict
 
 
+if __name__ == "__main__":
+    log_io = LogIO()
+    log_io.rename_log(13, "newname")

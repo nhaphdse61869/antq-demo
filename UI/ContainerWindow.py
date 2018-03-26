@@ -57,6 +57,7 @@ class App(QMainWindow):
             self.Stack.setCurrentIndex(1)
             self.mainUI.setDisabled(False)
             self.logUI.setDisabled(True)
+            self.LOG.logListTree.load_list_log()
         else:
             self.Stack.setCurrentIndex(0)
             self.mainUI.setDisabled(True)

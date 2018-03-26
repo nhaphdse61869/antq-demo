@@ -10,7 +10,10 @@ import numpy as np
 
 
 class AntQ(QThread):
-    def __init__(self, number_of_ants, num_of_iteration, graph, alpha=.1, gamma=.3, delta=1, beta=2, w=10, renderFunc=None, result=None):
+    run_finished = pyqtSignal()
+
+    def __init__(self, number_of_ants, num_of_iteration, graph, alpha=.1, gamma=.3, delta=1,
+                 beta=2, w=10, renderFunc=None, result_queue=None):
         QThread.__init__(self)
         self.number_of_ants = number_of_ants
         self.alpha = alpha
@@ -25,12 +28,12 @@ class AntQ(QThread):
         self.best_ant = -1
         self.ants = []
         self.renderFunc = renderFunc
-        self.best_tours = []
-        self.best_lens = []
+        self.list_best_tour = []
+        self.list_best_len = []
         self.list_avg = []
         self.list_var = []
         self.list_dev = []
-        self.result = result
+        self.result_queue = result_queue
 
     def delay_val(self):
         p_sum = 0
@@ -96,8 +99,9 @@ class AntQ(QThread):
         return iter_avg, iter_variance, iter_deviation
 
     def run(self):
+        #Run each iteration
         for i in range(0, self.num_of_iteration):
-            print("Iteration[%s]" % i)
+            #print("Iteration[%s]" % i)
             iter_avg, iter_variance, iter_deviation = self.iter_run()
             self.delay_ant_q()
             #self.renderFunc(i, self.best_tour_len, self.best_tour, iter_avg, iter_variance, iter_deviation)
@@ -109,12 +113,14 @@ class AntQ(QThread):
             aIter_result["iter_avg"] = iter_avg
             aIter_result["iter_variance"] = iter_variance
             aIter_result["iter_deviation"] = iter_deviation
-            self.result.put(aIter_result, False)
-            self.best_tours.append(self.best_tour)
-            self.best_lens.append(self.best_tour_len)
+            self.result_queue.put(aIter_result)
+            self.list_best_tour.append(self.best_tour)
+            self.list_best_len.append(self.best_tour_len)
             self.list_avg.append(iter_avg)
             self.list_var.append(iter_variance)
             self.list_dev.append(iter_deviation)
+        #Emit finish signal
+        self.run_finished.emit()
 
 
 

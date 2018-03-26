@@ -29,14 +29,14 @@ class Ant:
         if not self.end():
             max_node, max_val = self.max_aq()
             if q <= self.q0:
-                print("Exploitation")
+                #print("Exploitation")
                 next_node = max_node
             else:
-                print("Exploration")
+                #print("Exploration")
                 p = self.next_nodes_probabilities()
                 if not p:
                     p = [1.0 / len(self.nodes_to_visit)] * len(self.nodes_to_visit)
-                    print("p[all] = %s" % p[0])
+                    #print("p[all] = %s" % p[0])
 
                 next_node = np.random.choice(self.nodes_to_visit, 1, replace=False, p=p)[0]
 
@@ -44,7 +44,7 @@ class Ant:
                 raise Exception("next_node < 0")
 
             self.update_ant_q(next_node, max_val)
-            print("next node: %s" % (next_node, ))
+            #print("next node: %s" % (next_node, ))
             self.tour_len += self.ant_q.graph.distance(self.curr_node, next_node)
             self.tour.append(next_node)
             self.curr_node = next_node
@@ -69,7 +69,7 @@ class Ant:
         if heu_sum != 0:
             for node in self.nodes_to_visit:
                 p = self.heuristic_val(r, node) / heu_sum
-                print("p[%s] = %s" % (node, p,))
+                #print("p[%s] = %s" % (node, p,))
                 probabilities.append(p)
         return probabilities
 

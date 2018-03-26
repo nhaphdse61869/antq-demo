@@ -3,10 +3,12 @@ import codecs
 
 from PyQt5.QtWidgets import *
 from UI.MainUI import *
+from util.tsp import TSPFileReader
+from util.atsp import ATSPReader
 
 class OpenFileDialog(QWidget):
 
-    def __init__(self, listMarker, numMarker, graph, gmap):
+    def __init__(self, listMarker, dist_matrix, numMarker, graph, gmap):
         super().__init__()
         self.title = 'PyQt5 file dialogs - pythonspot.com'
         self.left = 10
@@ -14,7 +16,9 @@ class OpenFileDialog(QWidget):
         self.width = 640
         self.height = 480
         self.listMarker = listMarker
+        self.dist_matrix = dist_matrix
         self.numMarker = numMarker
+
         self.graph = graph
         self.gmap = gmap
         self.initUI()
@@ -27,7 +31,7 @@ class OpenFileDialog(QWidget):
     def openFileNameDialog(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
+        fileName, _ = QFileDialog.getOpenFileName(self, "Open File", "",
                                                   "All Files (*);;Python Files (*.py)", options=options)
         if fileName:
             data = json.load(codecs.open(fileName, 'r', 'utf-8-sig'))
@@ -44,10 +48,31 @@ class OpenFileDialog(QWidget):
     def openAtspFileNameDialog(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getOpenFileName(self, "QFileDialog.getOpenFileName()", "",
+        fileName, _ = QFileDialog.getOpenFileName(self, "Open File", "",
                                                   "All Files (*);;Python Files (*.py)", options=options)
         if fileName:
+            self.graph.clear_graph_tour()
             if fileName.lower().endswith('.atsp'):
-                print('atsp')
+                #Read atsp file
+                reader = ATSPReader(fileName.strip())
+                self.listMarker = reader.cities_tups
+                self.numMarker += len(self.listMarker)
+
+                self.dist_matrix = reader.dist_matrix
+
+                # Draw graph
+                for i in range(len(self.listMarker)):
+                    self.graph.add_coord(self.listMarker[i])
+                self.graph.draw_graph()
+
             elif fileName.lower().endswith('.tsp'):
-                print('tsp')
+                #Reader tsp file
+                reader = TSPFileReader(fileName.strip())
+                self.listMarker = reader.cities_tups
+                self.numMarker += len(self.listMarker)
+                self.dist_matrix = reader.dist_matrix
+
+                # Draw graph
+                for i in range(len(self.listMarker)):
+                    self.graph.add_coord(self.listMarker[i])
+                self.graph.draw_graph()

@@ -1,9 +1,13 @@
 import math
 import random
+from util.tsp import TSPFileReader
+from PyQt5.QtCore import QThread, pyqtSignal
 
+class SimAnneal(QThread):
+    run_finished = pyqtSignal()
+    def __init__(self, dist_matrix, T=-1, alpha=-1, stopping_T=-1, stopping_iter=-1, result_queue=None):
+        QThread.__init__(self)
 
-class SimAnneal(object):
-    def __init__(self, dist_matrix, T=-1, alpha=-1, stopping_T=-1, stopping_iter=-1):
         self.N = len(dist_matrix)
         self.T = math.sqrt(self.N) if T == -1 else T
         self.alpha = 0.995 if alpha == -1 else alpha
@@ -12,16 +16,25 @@ class SimAnneal(object):
         self.iteration = 1
 
         self.dist_matrix = dist_matrix
-        self.nodes = [i for i in range(self.N)]
+        self.result_queue = result_queue
+        self.nodes = range(self.N)
+
+        self.best_tours = []
+        self.best_lens = []
+        self.list_avg = []
+        self.list_var = []
+        self.list_dev = []
+        self.list_iter = []
 
         self.cur_solution = self.initial_solution()
-        self.best_solution = list(self.cur_solution)
+        self.best_tour = list(self.cur_solution)
 
         self.cur_fitness = self.fitness(self.cur_solution)
         self.initial_fitness = self.cur_fitness
-        self.best_fitness = self.cur_fitness
+        self.best_tour_len = self.cur_fitness
 
         self.fitness_list = [self.cur_fitness]
+
 
     def initial_solution(self):
         """
@@ -34,17 +47,22 @@ class SimAnneal(object):
         free_list.remove(cur_node)
 
         while free_list:
-            closest_dist = min([self.dist_matrix[cur_node][j] for j in free_list])
-            cur_node = self.dist_matrix[cur_node].index(closest_dist)
+            #Find minimum distance
+            min_distance = self.dist_matrix[cur_node][free_list[0]]
+            min_node = free_list[0]
+            for j in free_list:
+                temp_distance = self.dist_matrix[cur_node][j]
+                if temp_distance < min_distance:
+                    min_node = j
+            cur_node = min_node
             free_list.remove(cur_node)
             solution.append(cur_node)
-
         return solution
 
     def fitness(self, sol):
         """ Objective value of a solution """
-        return round(sum([self.dist_matrix[sol[i - 1]][sol[i]] for i in range(1, self.N)]) +
-                     self.dist_matrix[sol[0]][sol[self.N - 1]], 4)
+        return sum([self.dist_matrix[sol[i - 1]][sol[i]] for i in range(1, self.N)]) \
+               + self.dist_matrix[sol[0]][sol[self.N - 1]]
 
     def p_accept(self, candidate_fitness):
         """
@@ -62,30 +80,42 @@ class SimAnneal(object):
         if candidate_fitness < self.cur_fitness:
             self.cur_fitness = candidate_fitness
             self.cur_solution = candidate
-            if candidate_fitness < self.best_fitness:
-                self.best_fitness = candidate_fitness
-                self.best_solution = candidate
-
+            if candidate_fitness < self.best_tour_len:
+                self.best_tour_len = candidate_fitness
+                self.best_tour = candidate
         else:
             if random.random() < self.p_accept(candidate_fitness):
                 self.cur_fitness = candidate_fitness
                 self.cur_solution = candidate
 
-    def anneal(self):
+    def run(self):
         """
         Execute simulated annealing algorithm
         """
-        while self.T >= self.stopping_temperature and self.iteration < self.stopping_iter:
+        print("Start nào")
+        while self.T >= self.stopping_temperature and self.iteration <= self.stopping_iter:
+            print("Iteration thứ {}".format(self.iteration))
             candidate = list(self.cur_solution)
             l = random.randint(2, self.N - 1)
             i = random.randint(0, self.N - l)
             candidate[i:(i + l)] = reversed(candidate[i:(i + l)])
             self.accept(candidate)
+            self.list_iter.append(self.iteration - 1)
+            self.best_tours.append(self.cur_solution)
+            self.best_lens.append(self.cur_fitness)
             self.T *= self.alpha
             self.iteration += 1
 
             self.fitness_list.append(self.cur_fitness)
 
-        print('Best fitness obtained: ', self.best_fitness)
-        print('Improvement over greedy heuristic: ',
-              round((self.initial_fitness - self.best_fitness) / (self.initial_fitness), 4))
+            #Add result to queue
+            aIter_result = {}
+            aIter_result["iteration"] = self.iteration - 1
+            aIter_result["best_tour_len"] = self.cur_fitness
+            aIter_result["best_tour"] = self.cur_solution
+            self.result_queue.put(aIter_result)
+        self.run_finished.emit()
+
+        #print('Best fitness obtained: ', self.best_fitness)
+        #print('Improvement over greedy heuristic: ',
+              #round((self.initial_fitness - self.best_fitness) / (self.initial_fitness), 4))
