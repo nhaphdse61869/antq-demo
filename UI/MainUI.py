@@ -299,6 +299,7 @@ class UIThread(QWidget):
             self.DF = self.acoParam.discountFactor.value()
             self.BR = self.acoParam.balanceRate.value()
             self.numAgents = self.acoParam.numOfAgents.k
+            self.acoParam.Knum.value()
         elif self.curTab == 0:
             self.delta = self.antQParam.deltaSpin.value()
             self.beta = self.antQParam.betaSpin.value()
