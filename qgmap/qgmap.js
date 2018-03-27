@@ -126,8 +126,8 @@ function displayAllRouteVer2(listCoords, bestTour) {
     var waypts = [];
     for(var i = 1; i < listCoords.length; i++) {
         if(i%10==9) {
-            var start = new google.maps.LatLng(listCoords[bestTour[i-9]].latitude, listCoords[bestTour[i-9]].longitude);
-            var end = new google.maps.LatLng(listCoords[bestTour[i]].latitude, listCoords[bestTour[i]].longitude);
+            var start = new google.maps.LatLng(listCoords[bestTour[i-9]][0], listCoords[bestTour[i-9]][1]);
+            var end = new google.maps.LatLng(listCoords[bestTour[i]][0], listCoords[bestTour[i]][1]);
             directionsService.route({
                 origin: start,
                 destination: end,
@@ -147,8 +147,8 @@ function displayAllRouteVer2(listCoords, bestTour) {
             waypts = [];
         } else if(i==listCoords.length-1) {
             var sub = i%10;
-            var start = new google.maps.LatLng(listCoords[bestTour[i-sub]].latitude, listCoords[i-sub].longitude);
-            var end = new google.maps.LatLng(listCoords[bestTour[i]].latitude, listCoords[i].longitude);
+            var start = new google.maps.LatLng(listCoords[bestTour[i-sub]][0], listCoords[i-sub][1]);
+            var end = new google.maps.LatLng(listCoords[bestTour[i]][0], listCoords[i][1]);
             directionsService.route({
                 origin: start,
                 destination: end,
@@ -166,12 +166,12 @@ function displayAllRouteVer2(listCoords, bestTour) {
                 }
             });
         } else if(i%10!=0) {
-            var cur = new google.maps.LatLng(listCoords[bestTour[i]].latitude, listCoords[bestTour[i]].longitude);
+            var cur = new google.maps.LatLng(listCoords[bestTour[i]][0], listCoords[bestTour[i]][1]);
             waypts.push({
               location: cur,
               stopover: true
             });
-            alert(listCoords[bestTour[i]].latitude);
+            alert(listCoords[bestTour[i]][0]);
         }
     }
 }

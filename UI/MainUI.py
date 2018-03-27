@@ -30,6 +30,7 @@ class UIThread(QWidget):
         self.best_tour = []
         self.list_point = []
         self.dist_matrix = []
+        self.list_address = []
         self.numMarker = 0
         self.log_io = LogIO()
         self.logging = None
@@ -132,8 +133,13 @@ class UIThread(QWidget):
         #self.btn1.setGraphicsEffect()
         #self.show()
 
+        #Google Map WP widget
+        self.googleWP.showRoute.clicked.connect(self.run_google_map_log)
+
     def checkGoogleTab(self, pos):
         if pos == 1:
+            self.googleWP.rsFrame.load_list_log()
+            print(1)
             self.Stack.setCurrentIndex(1)
         else:
             self.Stack.setCurrentIndex(0)
@@ -191,6 +197,7 @@ class UIThread(QWidget):
         open.show()
         self.dist_matrix = open.dist_matrix
         self.list_point = open.listMarker
+        self.list_address = open.list_address
         self.graphWP.acoParam.numOfAgents.changeMax(open.numMarker)
         self.graphWP.antQParam.numOfAgents.changeMax(open.numMarker)
         self.numMarker = open.numMarker
@@ -202,13 +209,13 @@ class UIThread(QWidget):
 
     def applyPara(self):
         if self.curTab == 0:
-            self.delta = self.antQParam.deltaSpin.value()
-            self.beta = self.antQParam.betaSpin.value()
-            self.Ite = self.antQParam.iteration.value()
-            self.LR = self.antQParam.learningRate.value()
-            self.DF = self.antQParam.discountFactor.value()
-            self.BR = self.antQParam.balanceRate.value()
-            self.numAgents = self.antQParam.numOfAgents.k
+            self.delta = self.graphWP.antQParam.deltaSpin.value()
+            self.beta = self.graphWP.antQParam.betaSpin.value()
+            self.Ite = self.graphWP.antQParam.iteration.value()
+            self.LR = self.graphWP.antQParam.learningRate.value()
+            self.DF = self.graphWP.antQParam.discountFactor.value()
+            self.BR = self.graphWP.antQParam.balanceRate.value()
+            self.numAgents = self.graphWP.antQParam.numOfAgents.k
             if self.graphWP.antQParam.checkK.isChecked() == True:
                 self.k_number = self.graphWP.antQParam.Knum.value()
             else:
@@ -240,13 +247,11 @@ class UIThread(QWidget):
             self.result_handler.start()
 
             if self.curTab == 0:
-                if self.antQParam.checkK.isChecked() == True:
+                if self.graphWP.antQParam.checkK.isChecked() == True:
                     #Excute AntQ with Clustering
-
                     self.algEx = AntQClustering(self.list_point, self.dist_matrix, self.k_number, self.numAgents,
                                                 self.Ite, self.LR / 100, self.DF / 100, self.delta,
                                                 self.beta, result_queue=self.algorithm_result)
-                    print("Sao éo chạy")
                     self.algEx.run_finished.connect(self.algorithmFinished)
                     self.algEx.start()
                 else:
@@ -326,7 +331,6 @@ class UIThread(QWidget):
     def algorithmFinished(self):
         #Create Log object
         if self.curTab == 0:
-            print("Finish dk ko nè")
             #AntQ
             #Get all value
             key = self.log_io.get_new_log_key()
@@ -342,11 +346,10 @@ class UIThread(QWidget):
             parameter["delta"] = self.delta
             parameter["beta"] = self.beta
             parameter["k_number"] = self.k_number
-            print("Tới dataset nè")
             dataset = {}
             dataset["list_points"] = self.list_point
             dataset["distance_matrix"] = self.dist_matrix
-            print("Tới result nè")
+            dataset["list_address"] = self.list_address
             result = {}
             result["best_tour"] = self.algEx.best_tour
             result["best_length"] = self.algEx.best_tour_len
@@ -359,7 +362,6 @@ class UIThread(QWidget):
             #Create log object
             self.logging = Log(key=key, name=name, algorithm=algorithm, number_of_point=number_of_point,
                                created_date= created_date, parameter=parameter, dataset=dataset, result=result)
-            print("Có log object r nè")
         elif self.curTab == 1:
             #ACO
             # Get all value
@@ -378,6 +380,7 @@ class UIThread(QWidget):
             dataset = {}
             dataset["list_points"] = self.list_point
             dataset["distance_matrix"] = self.dist_matrix
+            dataset["list_address"] = self.list_address
             result = {}
             result["best_tour"] = self.algEx.best_tour
             result["best_length"] = self.algEx.best_tour_len
@@ -406,6 +409,7 @@ class UIThread(QWidget):
             dataset = {}
             dataset["list_points"] = self.list_point
             dataset["distance_matrix"] = self.dist_matrix
+            dataset["list_address"] = self.list_address
             result = {}
             result["best_tour"] = self.algEx.best_tour
             result["best_length"] = self.algEx.best_tour_len
@@ -444,6 +448,36 @@ class UIThread(QWidget):
         self.graphWP.chartMeanLength.clear_graph()
         self.graphWP.chartVarianceLength.clear_graph()
         self.logging = None
+
+    def run_google_map_log(self):
+        try:
+            log_key = self.googleWP.rsFrame.currentKey
+            selected_log = self.log_io.get_log(int(log_key))
+            if len(selected_log.dataset["list_address"]) > 0:
+                # Add marker
+                for i in range(len(selected_log.dataset["list_points"])):
+                    lat = selected_log.dataset["list_points"][i][0]
+                    long = selected_log.dataset["list_points"][i][1]
+
+                    self.gmap.addMarker(str(i + 1), lat, long, **dict(
+                        title="Click me"
+                    ))
+
+                # Show route
+                self.gmap.directss(selected_log.dataset["list_points"], selected_log.result["best_tour"])
+
+                # Show address
+                self.googleWP.show_route_address(selected_log.dataset["list_address"], selected_log.result["best_tour"])
+
+                # Show parameter
+                self.googleWP.show_algorithm_parameter(selected_log.parameter, selected_log.algorithm)
+
+            else:
+                error = QMessageBox()
+                error.critical(self, "Something error", "Error", QMessageBox.Ok)
+        except:
+            (type, value, traceback) = sys.exc_info()
+            sys.excepthook(type, value, traceback)
 
     def test(self):
         self.animation2.setDuration(1000)

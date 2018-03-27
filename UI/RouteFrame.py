@@ -28,9 +28,9 @@ class RouteFrame(QWidget):
         dataLayout.addWidget(self.dataView)
         self.dataGroupBox.setLayout(dataLayout)
 
-        model = self.createRouteTable(self)
-        self.dataView.setModel(model)
-        self.addRoute(model, 'A', 'A')
+        self.model = self.createRouteTable(self)
+        self.dataView.setModel(self.model)
+        self.addRoute(self.model, 'A', 'A')
 
         mainLayout = QVBoxLayout()
         mainLayout.addWidget(self.dataGroupBox)
@@ -48,3 +48,7 @@ class RouteFrame(QWidget):
         model.insertRow(0)
         model.setData(model.index(0, self.FROM), routeFrom)
         model.setData(model.index(0, self.TO), routeTo)
+
+    def clearAllRecords(self):
+        root = self.dataView.model()
+        root.removeRows(0, root.rowCount())

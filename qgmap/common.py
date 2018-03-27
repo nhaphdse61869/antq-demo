@@ -197,7 +197,7 @@ class QGoogleMap(QWebEngineView):
             "); ".format(key))
 
     @trace
-    def directss(self, listMarker,bestTour):
+    def directss(self, listMarker, bestTour):
         return self.runScript(
             "displayAllRouteVer2({},{});".format(listMarker,bestTour))
 

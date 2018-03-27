@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import *
 from UI.MainUI import *
 from util.tsp import TSPFileReader
 from util.atsp import ATSPReader
+from util.gmap import GMapDataReader
 
 class OpenFileDialog(QWidget):
 
@@ -18,6 +19,8 @@ class OpenFileDialog(QWidget):
         self.listMarker = listMarker
         self.dist_matrix = dist_matrix
         self.numMarker = numMarker
+        self.is_googlemap = False
+        self.list_address = []
 
         self.graph = graph
         self.gmap = gmap
@@ -51,6 +54,7 @@ class OpenFileDialog(QWidget):
         fileName, _ = QFileDialog.getOpenFileName(self, "Open File", "",
                                                   "All Files (*);;Python Files (*.py)", options=options)
         if fileName:
+            self.is_googlemap = False
             self.graph.clear_graph_tour()
             if fileName.lower().endswith('.atsp'):
                 #Read atsp file
@@ -71,6 +75,19 @@ class OpenFileDialog(QWidget):
                 self.listMarker = reader.cities_tups
                 self.numMarker += len(self.listMarker)
                 self.dist_matrix = reader.dist_matrix
+                # Draw graph
+                for i in range(len(self.listMarker)):
+                    self.graph.add_coord(self.listMarker[i])
+                self.graph.draw_graph()
+
+            elif fileName.lower().endswith('.json'):
+                self.is_googlemap = True
+                #Reader tsp file
+                reader = GMapDataReader(fileName.strip())
+                self.listMarker = reader.cities_tups
+                self.numMarker += len(self.listMarker)
+                self.dist_matrix = reader.dist_matrix
+                self.list_address = reader.list_address
                 # Draw graph
                 for i in range(len(self.listMarker)):
                     self.graph.add_coord(self.listMarker[i])

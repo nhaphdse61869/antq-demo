@@ -146,7 +146,4 @@ class TSPFileReader:
 
 
 if __name__ == "__main__":
-    reader = TSPFileReader("bayg29.tsp")
-    print(reader.cities_tups)
-    print(reader.dist_matrix)
     pass
