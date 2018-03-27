@@ -71,7 +71,6 @@ class OpenFileDialog(QWidget):
                 self.listMarker = reader.cities_tups
                 self.numMarker += len(self.listMarker)
                 self.dist_matrix = reader.dist_matrix
-
                 # Draw graph
                 for i in range(len(self.listMarker)):
                     self.graph.add_coord(self.listMarker[i])

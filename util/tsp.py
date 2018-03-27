@@ -77,7 +77,6 @@ class TSPFileReader:
                     for i in range(self.dimension):
                         for j in range(self.dimension):
                             distance_temp_y = self.dimension - 1 - j
-                            print(distance_temp_y)
                             if i == j:
                                 self.dist_matrix[i][j] = 0
                             elif j < i:

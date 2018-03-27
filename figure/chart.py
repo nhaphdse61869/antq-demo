@@ -119,7 +119,7 @@ class MultiLengthChartCanvas(FigureCanvas):
         self.list_axes = []
 
         for i in range(number_of_chart):
-            axes = fig.add_subplot(1, i + 1, 1)
+            axes = fig.add_subplot(1 , number_of_chart, i + 1)
             axes.autoscale()
             self.list_axes.append(axes)
 
