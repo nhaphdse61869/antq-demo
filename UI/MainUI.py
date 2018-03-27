@@ -16,6 +16,8 @@ from threading import Thread
 from UI.AntQTab import *
 from UI.SimAnnealTab import *
 from UI.ACOTab import *
+from UI.GraphWorkPlay import *
+from UI.GoogleWorkPlay import *
 import datetime
 from util.logging import LogIO, Log
 from hierarchy.antqCluster import *
@@ -36,7 +38,10 @@ class UIThread(QWidget):
         self.mainLayout = QVBoxLayout(self)
         #self.l = QFormLayout()
         self.layout = QHBoxLayout()
-        self.layout1 = QVBoxLayout()
+        #self.layout1 = QVBoxLayout()
+
+        self.graphWP = GraphWP()
+        self.googleWP = GoogkeWP()
 
         self.tabs2 = QTabWidget()
         self.tabGM = QWidget()
@@ -46,111 +51,22 @@ class UIThread(QWidget):
         self.tabGM.layout = QVBoxLayout()
         self.tabGM.setLayout(self.tabGM.layout)
         self.h.addWidget(self.tabs2)
-
-        self.tabs = QTabWidget()
-        self.tab1 = QWidget()
-        self.tab2 = QWidget()
-        self.tab3 = QWidget()
-        self.tabs.addTab(self.tab3, "Ant-Q")
-        self.tabs.addTab(self.tab1, "ACO")
-        self.tabs.addTab(self.tab2, "Simulated Annealing")
-        #Ant-Q Parameter layout-------------------------------------------------------------
-        self.tab3.layout = QVBoxLayout()
-        self.tab3.setLayout(self.tab3.layout)
-        self.antQParam = AntQTab()
-        self.tab3.layout.addLayout(self.antQParam.topParaLayout)
-        self.tab3.layout.addLayout(self.antQParam.paraLayoutH)
-        #-----------------------------------------------------------------------------
-        self.tab2.layout = QVBoxLayout()
-        self.tab2.setLayout(self.tab2.layout)
-        self.simAnnealParam = SimAnnealTab()
-        self.tab2.layout.addLayout(self.simAnnealParam.firstLayout)
-        self.tab2.layout.addLayout(self.simAnnealParam.secondLayout)
-        #-----------------------------------------------------------------------------
-        self.tab1.layout = QVBoxLayout()
-        self.tab1.setLayout(self.tab1.layout)
-        self.acoParam = ACOTab()
-
-        self.tab1.layout.addLayout(self.acoParam.topParaLayout)
-        self.tab1.layout.addLayout(self.acoParam.paraLayoutH)
-        #------------------------------------------------------------------------
-        # Chart LINE
-        self.tabGraphs = QTabWidget()
-        self.tabG1 = QWidget()
-        self.tabG2 = QWidget()
-        self.tabG3 = QWidget()
-        self.chartBestLength = LengthChartCanvas()
-        self.chartMeanLength = LengthChartCanvas()
-        self.chartVarianceLength = LengthChartCanvas()
-
-        self.tabGraphs.addTab(self.tabG1, "Best Length")
-        self.tabGraphs.addTab(self.tabG2, "Mean Length")
-        self.tabGraphs.addTab(self.tabG3, "Variance Length")
-
-        self.tabG1.layout = QVBoxLayout()
-        self.tabG1.setLayout(self.tabG1.layout)
-        self.paraSample = QScrollArea()
-        self.paraSample.setWidgetResizable(True)
-        self.tabG1.layout.addWidget(self.chartBestLength)
-        self.tabG1.layout.addWidget(self.paraSample)
-
-        self.tabG2.layout = QVBoxLayout()
-        self.tabG2.setLayout(self.tabG2.layout)
-        self.paraSample = QScrollArea()
-        self.paraSample.setWidgetResizable(True)
-        self.tabG2.layout.addWidget(self.chartMeanLength)
-        self.tabG2.layout.addWidget(self.paraSample)
-
-        self.tabG3.layout = QVBoxLayout()
-        self.tabG3.setLayout(self.tabG3.layout)
-        self.paraSample = QScrollArea()
-        self.paraSample.setWidgetResizable(True)
-        self.tabG3.layout.addWidget(self.chartVarianceLength)
-        self.tabG3.layout.addWidget(self.paraSample)
-
-        self.layout1.addWidget(self.tabGraphs)
-        # layout1.addWidget(chart)
-        # layout1.addWidget(paraSample)
-
-        # Chart Graph
         self.graph = GraphCanvas(width=6, height=5, dpi=110)
         self.tabGraph.layout = QVBoxLayout()
         self.tabGraph.setLayout(self.tabGraph.layout)
         self.tabGraph.layout.addWidget(self.graph)
         self.tabGraph.layout.setSpacing(0)
+        # layout1.addWidget(chart)
+        # layout1.addWidget(paraSample)
 
-        self.subLayout = QVBoxLayout()
+        # Chart Graph
+
         self.layout.addLayout(self.h)
-        self.layout.addLayout(self.subLayout)
-        self.ortherLayout = QHBoxLayout()
 
-        self.topSubLayout = QHBoxLayout()
-        self.topSubLayout.addWidget(self.tabs)
-        self.topSubLayout.addLayout(self.ortherLayout)
-
-        self.subLayout.addLayout(self.topSubLayout)
-
-        # function buttons
-        self.subLayout.addLayout(self.layout1)
-        #self.btn1 = StateWidget()
-        self.btn1 = QPushButton("Apply")
-        self.btn2 = QPushButton("Run")
-        self.btn3 = QPushButton("Test")
-        self.btn4 = QPushButton("Generate")
-        #self.btn2.setStyleSheet("background-color: red")
-        self.formButCon1 = QGroupBox()
-        self.butLayout1 = QFormLayout()
-
-        self.butLayout1.addWidget(self.btn1)
-        self.butLayout1.addWidget(self.btn2)
-        self.butLayout1.addWidget(self.btn3)
-        self.butLayout2 = QFormLayout()
-        self.butLayout2.addWidget(self.btn4)
-        self.ortherLayout.setStretch(10, 10)
-
-        self.ortherLayout.addLayout(self.butLayout1)
-        self.ortherLayout.addLayout(self.butLayout2)
-
+        self.Stack = QStackedWidget(self)
+        self.Stack.addWidget(self.graphWP)
+        self.Stack.addWidget(self.googleWP)
+        self.layout.addWidget(self.Stack)
         self.mainLayout.addLayout(self.layout)
 
         #self.h.addLayout(self.l)
@@ -204,26 +120,32 @@ class UIThread(QWidget):
         self.T_0 = 0
         self.T_min = 0
 
-        self.acoParam.checkK.stateChanged.connect(self.enableSpinBox)
-        self.antQParam.checkK.stateChanged.connect(self.enableSpinBox)
+        self.graphWP.acoParam.checkK.stateChanged.connect(self.enableSpinBox)
+        self.graphWP.antQParam.checkK.stateChanged.connect(self.enableSpinBox)
 
-        self.btn2.clicked.connect(self.runAlgorithm)
-        self.btn1.clicked.connect(self.applyPara)
-        self.btn3.clicked.connect(self.test)
-        self.btn4.clicked.connect(self.openFileDialog)
-        self.tabs.tabBarClicked.connect(self.checkCurrentTab)
+        self.graphWP.btn2.clicked.connect(self.runAlgorithm)
+        self.graphWP.btn1.clicked.connect(self.applyPara)
+        self.graphWP.btn3.clicked.connect(self.test)
+        self.graphWP.btn4.clicked.connect(self.openFileDialog)
+        self.graphWP.tabs.tabBarClicked.connect(self.checkCurrentTab)
+        self.tabs2.tabBarClicked.connect(self.checkGoogleTab)
         #self.btn1.setGraphicsEffect()
         #self.show()
 
+    def checkGoogleTab(self, pos):
+        if pos == 1:
+            self.Stack.setCurrentIndex(1)
+        else:
+            self.Stack.setCurrentIndex(0)
 
     def checkCurrentTab(self, pos):
         self.curTab = pos
         if pos == 2:
-            self.tabGraphs.removeTab(2)
-            self.tabGraphs.removeTab(1)
-        elif self.tabGraphs.count() == 1:
-            self.tabGraphs.addTab(self.tabG2, "Mean Length")
-            self.tabGraphs.addTab(self.tabG3, "Variance Length")
+            self.graphWP.tabGraphs.removeTab(2)
+            self.graphWP.tabGraphs.removeTab(1)
+        elif self.graphWP.tabGraphs.count() == 1:
+            self.graphWP.tabGraphs.addTab(self.graphWP.tabG2, "Mean Length")
+            self.graphWP.tabGraphs.addTab(self.graphWP.tabG3, "Variance Length")
 
 
     def onMarkerRClick(self, key):
@@ -252,9 +174,9 @@ class UIThread(QWidget):
         self.gmap.addMarker(str(self.numMarker), latitude, longitude, **dict(
             title="Move me!"
         ))
-        self.graph.add_coord((latitude, longitude))
-        self.acoParam.numOfAgents.changeMax(self.numMarker)
-        self.antQParam.numOfAgents.changeMax(self.numMarker)
+        self.graphWP.graph.add_coord((latitude, longitude))
+        self.graphWP.acoParam.numOfAgents.changeMax(self.numMarker)
+        self.graphWP.antQParam.numOfAgents.changeMax(self.numMarker)
         print("LClick on ", latitude, longitude)
 
     def onMapDClick(self, latitude, longitude):
@@ -269,8 +191,8 @@ class UIThread(QWidget):
         open.show()
         self.dist_matrix = open.dist_matrix
         self.list_point = open.listMarker
-        self.acoParam.numOfAgents.changeMax(open.numMarker)
-        self.antQParam.numOfAgents.changeMax(open.numMarker)
+        self.graphWP.acoParam.numOfAgents.changeMax(open.numMarker)
+        self.graphWP.antQParam.numOfAgents.changeMax(open.numMarker)
         self.numMarker = open.numMarker
 
     def valuechange(self, label):
@@ -287,23 +209,23 @@ class UIThread(QWidget):
             self.DF = self.antQParam.discountFactor.value()
             self.BR = self.antQParam.balanceRate.value()
             self.numAgents = self.antQParam.numOfAgents.k
-            if self.antQParam.checkK.isChecked() == True:
-                self.k_number = self.antQParam.Knum.value()
+            if self.graphWP.antQParam.checkK.isChecked() == True:
+                self.k_number = self.graphWP.antQParam.Knum.value()
             else:
                 self.k_number = -1
         elif self.curTab == 1:
-            self.delta = self.acoParam.deltaSpin.value()
-            self.beta = self.acoParam.betaSpin.value()
-            self.Ite = self.acoParam.iteration.value()
-            self.LR = self.acoParam.learningRate.value()
-            self.DF = self.acoParam.discountFactor.value()
-            self.BR = self.acoParam.balanceRate.value()
-            self.numAgents = self.acoParam.numOfAgents.k
+            self.delta = self.graphWP.acoParam.deltaSpin.value()
+            self.beta = self.graphWP.acoParam.betaSpin.value()
+            self.Ite = self.graphWP.acoParam.iteration.value()
+            self.LR = self.graphWP.acoParam.learningRate.value()
+            self.DF = self.graphWP.acoParam.discountFactor.value()
+            self.BR = self.graphWP.acoParam.balanceRate.value()
+            self.numAgents = self.graphWP.acoParam.numOfAgents.k
         elif self.curTab == 2:
-            self.T_0 = self.simAnnealParam.temperInit.value()
-            self.T_min = self.simAnnealParam.temperEnd.value()
-            self.beta = self.simAnnealParam.betaSpin.value()
-            self.Ite = self.simAnnealParam.iterSpin.value()
+            self.T_0 = self.graphWP.simAnnealParam.temperInit.value()
+            self.T_min = self.graphWP.simAnnealParam.temperEnd.value()
+            self.beta = self.graphWP.simAnnealParam.betaSpin.value()
+            self.Ite = self.graphWP.simAnnealParam.iterSpin.value()
 
     # Implement Algorithm
     def runAlgorithm(self):
@@ -364,14 +286,14 @@ class UIThread(QWidget):
                 # Draw chart
                 if iteration == 0:
                     # add new lines
-                    self.chartBestLength.add_new_line(iteration, best_tour_len)
-                    self.chartMeanLength.add_new_line(iteration, iter_avg)
-                    self.chartVarianceLength.add_new_line(iteration, iter_variance)
+                    self.graphWP.chartBestLength.add_new_line(iteration, best_tour_len)
+                    self.graphWP.chartMeanLength.add_new_line(iteration, iter_avg)
+                    self.graphWP.chartVarianceLength.add_new_line(iteration, iter_variance)
                 else:
                     # update lines
-                    self.chartBestLength.update_newest_line(iteration, best_tour_len)
-                    self.chartMeanLength.update_newest_line(iteration, iter_avg)
-                    self.chartVarianceLength.update_newest_line(iteration, iter_variance)
+                    self.graphWP.chartBestLength.update_newest_line(iteration, best_tour_len)
+                    self.graphWP.chartMeanLength.update_newest_line(iteration, iter_avg)
+                    self.graphWP.chartVarianceLength.update_newest_line(iteration, iter_variance)
 
             elif self.curTab == 1:
                 iter_avg = result["iter_avg"]
@@ -381,24 +303,24 @@ class UIThread(QWidget):
                 # Draw chart
                 if iteration == 0:
                     # add new lines
-                    self.chartBestLength.add_new_line(iteration, best_tour_len)
-                    self.chartMeanLength.add_new_line(iteration, iter_avg)
-                    self.chartVarianceLength.add_new_line(iteration, iter_variance)
+                    self.graphWP.chartBestLength.add_new_line(iteration, best_tour_len)
+                    self.graphWP.chartMeanLength.add_new_line(iteration, iter_avg)
+                    self.graphWP.chartVarianceLength.add_new_line(iteration, iter_variance)
                 else:
                     # update lines
-                    self.chartBestLength.update_newest_line(iteration, best_tour_len)
-                    self.chartMeanLength.update_newest_line(iteration, iter_avg)
-                    self.chartVarianceLength.update_newest_line(iteration, iter_variance)
+                    self.graphWP.chartBestLength.update_newest_line(iteration, best_tour_len)
+                    self.graphWP.chartMeanLength.update_newest_line(iteration, iter_avg)
+                    self.graphWP.chartVarianceLength.update_newest_line(iteration, iter_variance)
 
             elif self.curTab == 2:
                 # Simulated Annealing
                 # Draw chart
                 if iteration == 0:
                     # add new lines
-                    self.chartBestLength.add_new_line(iteration, best_tour_len)
+                    self.graphWP.chartBestLength.add_new_line(iteration, best_tour_len)
                 else:
                     # update lines
-                    self.chartBestLength.update_newest_line(iteration, best_tour_len)
+                    self.graphWP.chartBestLength.update_newest_line(iteration, best_tour_len)
 
     @pyqtSlot()
     def algorithmFinished(self):
@@ -517,10 +439,10 @@ class UIThread(QWidget):
             self.antQParam.Knum.setDisabled(True)
 
     def clear_graph(self):
-        self.graph.clear_graph_tour()
-        self.chartBestLength.clear_graph()
-        self.chartMeanLength.clear_graph()
-        self.chartVarianceLength.clear_graph()
+        self.graphWP.graph.clear_graph_tour()
+        self.graphWP.chartBestLength.clear_graph()
+        self.graphWP.chartMeanLength.clear_graph()
+        self.graphWP.chartVarianceLength.clear_graph()
         self.logging = None
 
     def test(self):

@@ -47,7 +47,7 @@ class ResultFrame(QWidget):
         # Init list log
         self.log_io = LogIO()
         self.list_log = []
-        self.load_list_log()
+        #self.load_list_log()
         self.dataView.setCurrentIndex(self.model.index(0, 0));
         #self.dataView.selectionModel().setCurrentIndex(self.model.createIndex( 0, 0), QItemSelectionModel.SelectCurrent)
         mainLayout = QVBoxLayout()
