@@ -27,7 +27,7 @@ class Ant:
         q = random.random()
 
         if not self.end():
-            max_node, max_val = self.max_aq()
+            max_node, max_val = self.ant_q.graph.max_aq(self.curr_node, self.nodes_to_visit)
             if q <= self.q0:
                 print("Exploitation")
                 next_node = max_node
@@ -43,7 +43,7 @@ class Ant:
             if next_node == -1:
                 raise Exception("next_node < 0")
 
-            self.update_ant_q(next_node, max_val)
+            self.update_ant_q(self.curr_node, next_node, max_val)
             print("next node: %s" % (next_node, ))
             self.tour_len += self.ant_q.graph.distance(self.curr_node, next_node)
             self.tour.append(next_node)
@@ -51,10 +51,14 @@ class Ant:
             self.nodes_to_visit.remove(next_node)
 
         else:
-            self.tour_len += self.ant_q.graph.distance(self.tour[-1], self.tour[0])
+            curr_node = self.tour[-1]
+            next_node = self.tour[0]
+            aq_val = self.ant_q.graph.antQ_val(curr_node, next_node)
+            self.update_ant_q(curr_node, next_node, aq_val)
+            self.tour_len += self.ant_q.graph.distance(curr_node, next_node)
 
-    def update_ant_q(self, next_node, max_val):
-        r = self.curr_node
+    def update_ant_q(self, curr_node, next_node, max_val):
+        r = curr_node
         s = next_node
         alpha = self.ant_q.alpha
         gamma = self.ant_q.gamma
@@ -72,17 +76,6 @@ class Ant:
                 print("p[%s] = %s" % (node, p,))
                 probabilities.append(p)
         return probabilities
-
-    def max_aq(self):
-        max_val = -1
-        max_node = -1
-        r = self.curr_node
-        for s in self.nodes_to_visit:
-            ant_q_val = self.ant_q.graph.antQ_val(r, s)
-            if ant_q_val > max_val:
-                max_val = ant_q_val
-                max_node = s
-        return max_node, max_val
 
     def heuristic_val(self, r, s):
         return math.pow(self.ant_q.graph.antQ_val(r, s), self.ant_q.delta) * math.pow(self.ant_q.graph.heu_val(r, s), self.ant_q.beta)
