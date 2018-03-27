@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="350a390b-6655-4a6c-abe3-38d7ef8487ba" name="Default" comment="">
-      <change beforePath="" afterPath="$PROJECT_DIR$/aco/aco.py" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/antq/ant.py" afterPath="$PROJECT_DIR$/antq/ant.py" />
-      <change beforePath="$PROJECT_DIR$/antq/antQ.py" afterPath="$PROJECT_DIR$/antq/antQ.py" />
-      <change beforePath="$PROJECT_DIR$/antq/antQGraph.py" afterPath="$PROJECT_DIR$/antq/antQGraph.py" />
-    </list>
+    <list default="true" id="350a390b-6655-4a6c-abe3-38d7ef8487ba" name="Default" comment="" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -20,11 +14,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="ant.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="ant.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/antq/ant.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="184">
-              <caret line="77" column="28" lean-forward="false" selection-start-line="77" selection-start-column="28" selection-end-line="77" selection-end-column="28" />
+            <state relative-caret-position="-917">
+              <caret line="11" column="9" lean-forward="true" selection-start-line="11" selection-start-column="9" selection-end-line="11" selection-end-column="9" />
               <folding />
             </state>
           </provider>
@@ -40,10 +34,10 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="antQGraph.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="antQGraph.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/antq/antQGraph.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="255">
+            <state relative-caret-position="375">
               <caret line="25" column="38" lean-forward="false" selection-start-line="25" selection-start-column="24" selection-end-line="25" selection-end-column="38" />
               <folding />
             </state>
@@ -85,8 +79,8 @@
       <file leaf-file-name="antQ.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/antq/antQ.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="333">
-              <caret line="50" column="60" lean-forward="false" selection-start-line="50" selection-start-column="60" selection-end-line="50" selection-end-column="60" />
+            <state relative-caret-position="151">
+              <caret line="50" column="73" lean-forward="false" selection-start-line="50" selection-start-column="67" selection-end-line="50" selection-end-column="73" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -147,6 +141,7 @@
       <find>sens</find>
       <find>numAgents</find>
       <find>rank</find>
+      <find>max_aq</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -167,9 +162,9 @@
         <option value="$PROJECT_DIR$/antqDemo.py" />
         <option value="$PROJECT_DIR$/util/tsp.py" />
         <option value="$PROJECT_DIR$/aco/aco.py" />
+        <option value="$PROJECT_DIR$/antq/antQGraph.py" />
         <option value="$PROJECT_DIR$/antq/antQ.py" />
         <option value="$PROJECT_DIR$/antq/ant.py" />
-        <option value="$PROJECT_DIR$/antq/antQGraph.py" />
       </list>
     </option>
   </component>
@@ -334,7 +329,6 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="20" y="23" width="1400" height="795" extended-state="0" />
-    <editor active="true" />
     <layout>
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32918397" sideWeight="0.50285715" order="7" side_tool="true" content_ui="tabs" />
@@ -342,7 +336,7 @@
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32918397" sideWeight="0.49714285" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.38727525" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.27109268" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.27109268" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.205" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="R Packages" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Docker" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="false" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -735,10 +729,18 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/antq/antQGraph.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="375">
+          <caret line="25" column="38" lean-forward="false" selection-start-line="25" selection-start-column="24" selection-end-line="25" selection-end-column="38" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/antq/antQ.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="333">
-          <caret line="50" column="60" lean-forward="false" selection-start-line="50" selection-start-column="60" selection-end-line="50" selection-end-column="60" />
+        <state relative-caret-position="151">
+          <caret line="50" column="73" lean-forward="false" selection-start-line="50" selection-start-column="67" selection-end-line="50" selection-end-column="73" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>
@@ -747,16 +749,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/antq/ant.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="184">
-          <caret line="77" column="28" lean-forward="false" selection-start-line="77" selection-start-column="28" selection-end-line="77" selection-end-column="28" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/antq/antQGraph.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="25" column="38" lean-forward="false" selection-start-line="25" selection-start-column="24" selection-end-line="25" selection-end-column="38" />
+        <state relative-caret-position="-917">
+          <caret line="11" column="9" lean-forward="true" selection-start-line="11" selection-start-column="9" selection-end-line="11" selection-end-column="9" />
           <folding />
         </state>
       </provider>
