@@ -22,3 +22,13 @@ class AntQGraph:
     def heu_val(self, r, s):
         distance = 1.0 / self.distance(r, s)
         return distance
+
+    def max_aq(self, r, nodes_to_visit):
+        max_val = -1
+        max_node = -1
+        for s in nodes_to_visit:
+            ant_q_val = self.antQ_val(r, s)
+            if ant_q_val > max_val:
+                max_val = ant_q_val
+                max_node = s
+        return max_node, max_val

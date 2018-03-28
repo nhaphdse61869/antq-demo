@@ -80,7 +80,7 @@ class UILog(QWidget):
 
             algorithm = self.list_selected_log[0].algorithm
             if algorithm == "AntQ" or algorithm == "ACO":
-                self.compareChart = MultiLengthChartCanvas(number_of_chart=3)
+                self.compareChart = MultiLengthChartCanvas(number_of_chart=3, list_chart_name=["Best Length", "Average Length", "Deviation"])
                 for i in range(len(self.list_selected_log)):
                     list_iteration = self.list_selected_log[i].result["list_iteration"]
                     list_best_len = self.list_selected_log[i].result["list_best_len"]

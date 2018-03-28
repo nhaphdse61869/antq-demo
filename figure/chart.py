@@ -8,7 +8,6 @@ import numpy as np
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
-
 class GraphCanvas(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
@@ -113,7 +112,7 @@ class LengthChartCanvas(FigureCanvas):
         self.axes.clear()
 
 class MultiLengthChartCanvas(FigureCanvas):
-    def __init__(self, parent=None, number_of_chart=1, width=5, height=4, dpi=100):
+    def __init__(self, parent=None, number_of_chart=1, width=5, height=4, dpi=100, list_chart_name=[]):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.number_of_chart = number_of_chart
         self.list_axes = []
@@ -122,6 +121,9 @@ class MultiLengthChartCanvas(FigureCanvas):
             axes = fig.add_subplot(1 , number_of_chart, i + 1)
             axes.autoscale()
             self.list_axes.append(axes)
+
+        for i in range(len(list_chart_name)):
+            self.list_axes[i].set_title(list_chart_name[i])
 
         self.axes_lines = [[] for i in range(number_of_chart)]
 

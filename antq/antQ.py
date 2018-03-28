@@ -1,19 +1,14 @@
 import sys
-import time
 
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from antq.ant import Ant
-from antq.antQGraph import AntQGraph
-import UI.distance as distance
 import numpy as np
 
 
 class AntQ(QThread):
     run_finished = pyqtSignal()
-
-    def __init__(self, number_of_ants, num_of_iteration, graph, alpha=.1, gamma=.3, delta=1,
-                 beta=2, w=10, renderFunc=None, result_queue=None):
+    def __init__(self, number_of_ants, num_of_iteration, graph, alpha=.1, gamma=.3, delta=1, beta=2, w=10, renderFunc=None, result_queue=None):
         QThread.__init__(self)
         self.number_of_ants = number_of_ants
         self.alpha = alpha
@@ -47,19 +42,23 @@ class AntQ(QThread):
         return self.w / p_sum
 
     def delay_ant_q(self):
-        for i in range(0, len(self.best_tour)):
-            r = self.best_tour[i]
+        nodes_valid_from_r = self.best_tour[:]
+        for i, node in enumerate(self.best_tour):
+            r = node
+            nodes_valid_from_r.remove(r)
             if i < len(self.best_tour) - 1:
-                s = self.best_tour[i+1]
+                s = self.best_tour[i + 1]
+                ant_q_val = (1 - self.alpha) * self.graph.antQ_val(r, s) + self.alpha * (
+                        self.delay_val() + self.gamma * self.graph.max_aq(r, nodes_valid_from_r)[1])
             else:
                 s = self.best_tour[0]
-            ant_q_val = (1 - self.alpha) * self.graph.antQ_val(r, s) + self.alpha * self.delay_val()
+                ant_q_val = (1 - self.alpha) * self.graph.antQ_val(r, s) + self.alpha * self.delay_val()
             self.graph.aq_mat[r][s] = ant_q_val
 
     def create_ants(self):
         self.ants = []
         nodes = list(range(0, self.graph.num_node))
-        starting_nodes = np.random.choice(nodes, self.number_of_ants, replace=True)
+        starting_nodes = np.random.choice(nodes, self.number_of_ants)
         for i in range(0, self.number_of_ants):
             ant = Ant(i, self, starting_nodes[i])
             self.ants.append(ant)
@@ -99,11 +98,11 @@ class AntQ(QThread):
         return iter_avg, iter_variance, iter_deviation
 
     def run(self):
-        #Run each iteration
         for i in range(0, self.num_of_iteration):
-            #print("Iteration[%s]" % i)
+            print("Iteration[%s]" % i)
             iter_avg, iter_variance, iter_deviation = self.iter_run()
             self.delay_ant_q()
+
             #self.renderFunc(i, self.best_tour_len, self.best_tour, iter_avg, iter_variance, iter_deviation)
             #self.iteration_finished.emit(i, self.best_tour_len, self.best_tour, iter_avg, iter_variance, iter_deviation)
             aIter_result = {}
@@ -119,7 +118,6 @@ class AntQ(QThread):
             self.list_avg.append(iter_avg)
             self.list_var.append(iter_variance)
             self.list_dev.append(iter_deviation)
-        #Emit finish signal
         self.run_finished.emit()
 
 

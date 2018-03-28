@@ -3,7 +3,7 @@ from antq.antQGraph import AntQGraph
 from PyQt5.QtCore import QThread, pyqtSignal
 from cluster.kmeans import KMean
 import random as rand
-import util.tsp
+import sys
 
 class AntQClustering(QThread):
     run_finished = pyqtSignal()
@@ -23,7 +23,7 @@ class AntQClustering(QThread):
         self.beta = beta
         self.merge_cluster = merge_cluster
         self.best_tour = []
-        self.best_tour_len = 0
+        self.best_tour_len = sys.maxsize
         self.list_best_tour = []
         self.list_best_len = []
         self.list_avg = []
@@ -218,36 +218,47 @@ class AntQClustering(QThread):
 
     def run(self):
         #Divide graph into cluster and initial algorithm
-        self.initial_algorithm()
+        try:
+            self.initial_algorithm()
+            prev_iter_best_tour = []
+            prev_iter_best_len = sys.maxsize
+            # Run each iteration
+            for i in range(0, self.number_of_iteration):
+                print("Iteration {}".format(i))
+                iteration_variance, iteration_avg, iteration_deviation = self.iteration_run()
+                self.best_tour_len = 0
 
-        #Run each iteration
-        for i in range(0, self.number_of_iteration):
-            print("Iteration {}".format(i))
-            self.best_tour_len = 0
-            self.best_tour = []
-            iteration_variance, iteration_avg, iteration_deviation = self.iteration_run()
-            iter_best_tour = self.best_tour
+                # Calculate best length
+                for j in range(len(self.best_tour) - 1):
+                    self.best_tour_len += self.dist_matrix[self.best_tour[j]][self.best_tour[j + 1]]
 
+                self.best_tour_len += self.dist_matrix[self.best_tour[-1]][self.best_tour[0]]
 
-            #Calculate best length
-            for j in range(len(iter_best_tour) - 1):
-                self.best_tour_len += self.dist_matrix[iter_best_tour[j]][iter_best_tour[j + 1]]
+                # Do not show larger graph
+                if prev_iter_best_len > self.best_tour_len:
+                    prev_iter_best_len = self.best_tour_len
+                    prev_iter_best_tour = self.best_tour
+                else:
+                    self.best_tour_len = prev_iter_best_len
+                    self.best_tour = prev_iter_best_tour
 
-            self.best_tour_len += self.dist_matrix[iter_best_tour[-1]][iter_best_tour[0]]
+                # Add result to queue
 
-            #Add result to queue
-            aIter_result = {}
-            aIter_result["iteration"] = i
-            aIter_result["best_tour_len"] = self.best_tour_len
-            aIter_result["best_tour"] = self.best_tour
-            aIter_result["iter_avg"] = iteration_avg
-            aIter_result["iter_variance"] = iteration_variance
-            aIter_result["iter_deviation"] = iteration_deviation
-            self.result_queue.put(aIter_result)
-            self.list_best_tour.append(iter_best_tour)
-            self.list_best_len.append(self.best_tour_len)
-            self.list_avg.append(iteration_avg)
-            self.list_var.append(iteration_variance)
-            self.list_dev.append(iteration_deviation)
+                aIter_result = {}
+                aIter_result["iteration"] = i
+                aIter_result["best_tour_len"] = self.best_tour_len
+                aIter_result["best_tour"] = self.best_tour
+                aIter_result["iter_avg"] = iteration_avg
+                aIter_result["iter_variance"] = iteration_variance
+                aIter_result["iter_deviation"] = iteration_deviation
+                self.result_queue.put(aIter_result)
+                self.list_best_tour.append(self.best_tour)
+                self.list_best_len.append(self.best_tour_len)
+                self.list_avg.append(iteration_avg)
+                self.list_var.append(iteration_variance)
+                self.list_dev.append(iteration_deviation)
 
-        self.run_finished.emit()
+            self.run_finished.emit()
+        except:
+            (type, value, traceback) = sys.exc_info()
+            sys.excepthook(type, value, traceback)

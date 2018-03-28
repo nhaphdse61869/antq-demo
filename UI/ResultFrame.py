@@ -32,6 +32,7 @@ class ResultFrame(QWidget):
         self.algorithmCb.currentIndexChanged.connect(self.selectionchange)
 
         self.dataView = QTreeView()
+        self.dataView.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.dataView.setRootIsDecorated(False)
         self.dataView.setAlternatingRowColors(True)
         self.model = QtGui.QStandardItemModel()
