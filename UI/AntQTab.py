@@ -83,12 +83,13 @@ class AntQTab(QWidget):
         self.formContainer6 = QGroupBox("Clustering")
         self.formLayout5 = QFormLayout()
         self.Knum = QSpinBox()
-        self.Knum.setMinimum(0)
+        self.Knum.setMinimum(1)
+        self.Knum.setValue(1)
         self.Knum.setMaximum(1000)
-        self.Knum.setDisabled(True)
-        self.checkK = QCheckBox()
+        #self.Knum.setDisabled(True)
+        #self.checkK = QCheckBox()
 
-        self.formLayout5.addRow(QLabel("Use:"), self.checkK)
+        #self.formLayout5.addRow(QLabel("Use:"), self.checkK)
         self.formLayout5.addRow(QLabel("K nums:"), self.Knum)
         self.formContainer6.setLayout(self.formLayout5)
 
@@ -105,16 +106,16 @@ class AntQTab(QWidget):
         self.paraLayoutH.addLayout(self.paraLayoutRight)
         self.paraLayoutRight.addWidget(self.formContainer5)
         self.paraLayoutRight.addWidget(self.formContainer6)
-        self.geneticBox.stateChanged.connect(self.enableSpinBox)
+        #self.geneticBox.stateChanged.connect(self.enableSpinBox)
 
-    def enableSpinBox(self):
-        if self.geneticBox.isChecked() == True:
-            self.formContainer1.setDisabled(True)
-            self.formContainer2.setDisabled(True)
-            self.formContainer3.setDisabled(True)
-            self.formContainer4.setDisabled(True)
-        else:
-            self.formContainer1.setDisabled(False)
-            self.formContainer2.setDisabled(False)
-            self.formContainer3.setDisabled(False)
-            self.formContainer4.setDisabled(False)
+    #def enableSpinBox(self):
+    #    if self.geneticBox.isChecked() == True:
+    #        self.formContainer1.setDisabled(True)
+    #        self.formContainer2.setDisabled(True)
+    #        self.formContainer3.setDisabled(True)
+    #        self.formContainer4.setDisabled(True)
+    #    else:
+    #        self.formContainer1.setDisabled(False)
+    #        self.formContainer2.setDisabled(False)
+    #        self.formContainer3.setDisabled(False)
+    #        self.formContainer4.setDisabled(False)

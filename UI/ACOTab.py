@@ -76,12 +76,13 @@ class ACOTab(QWidget):
         self.formContainer6 = QGroupBox("Clustering")
         self.formLayout5 = QFormLayout()
         self.Knum = QSpinBox()
-        self.Knum.setMinimum(0)
+        self.Knum.setMinimum(1)
+        self.Knum.setValue(1)
         self.Knum.setMaximum(1000)
-        self.Knum.setDisabled(True)
-        self.checkK = QCheckBox()
+        #self.Knum.setDisabled(True)
+        #self.checkK = QCheckBox()
 
-        self.formLayout5.addRow(QLabel("Use:"), self.checkK)
+        #self.formLayout5.addRow(QLabel("Use:"), self.checkK)
         self.formLayout5.addRow(QLabel("K nums:"), self.Knum)
         self.formContainer6.setLayout(self.formLayout5)
 

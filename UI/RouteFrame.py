@@ -5,11 +5,11 @@ from PyQt5.QtCore import (QDate, QDateTime, QRegExp, QSortFilterProxyModel, Qt,
 from PyQt5.QtGui import QStandardItemModel
 from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QGridLayout,
                              QGroupBox, QHBoxLayout, QLabel, QLineEdit, QTreeView, QVBoxLayout,
-                             QWidget)
+                             QWidget, QSizePolicy, QHeaderView)
 
 
 class RouteFrame(QWidget):
-    FROM, TO = range(2)
+    NO1, FROM, NO2, TO = range(4)
 
     def __init__(self):
         super().__init__()
@@ -19,7 +19,7 @@ class RouteFrame(QWidget):
     def initUI(self):
         self.setWindowTitle(self.title)
 
-        self.dataGroupBox = QGroupBox("Inbox")
+        self.dataGroupBox = QGroupBox("Result")
         self.dataView = QTreeView()
         self.dataView.setRootIsDecorated(False)
         self.dataView.setAlternatingRowColors(True)
@@ -30,7 +30,12 @@ class RouteFrame(QWidget):
 
         self.model = self.createRouteTable(self)
         self.dataView.setModel(self.model)
-        self.addRoute(self.model, 'A', 'A')
+        myQHeaderView = self.dataView.header()
+        myQHeaderView.resizeSection(0, 25)
+        myQHeaderView.resizeSection(1, 190)
+        myQHeaderView.resizeSection(2, 25)
+        myQHeaderView.resizeSection(3, 190)
+        #self.addRoute(self.model, 'A', 'A')
 
         mainLayout = QVBoxLayout()
         mainLayout.addWidget(self.dataGroupBox)
@@ -39,9 +44,11 @@ class RouteFrame(QWidget):
         self.show()
 
     def createRouteTable(self, parent):
-        model = QStandardItemModel(0, 2, parent)
+        model = QStandardItemModel(0, 4, parent)
+        model.setHeaderData(self.NO1, Qt.Horizontal, "No")
         model.setHeaderData(self.FROM, Qt.Horizontal, "From")
-        model.setHeaderData(self.TO, Qt.Horizontal, "TO")
+        model.setHeaderData(self.NO2, Qt.Horizontal, "No")
+        model.setHeaderData(self.TO, Qt.Horizontal, "To")
         return model
 
     def addRoute(self, model, routeFrom, routeTo):

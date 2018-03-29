@@ -55,7 +55,7 @@ function gmap_addMarker(key, latitude, longitude, parameters) {
     parameters['map'] = map
     parameters['position'] = coords;
     parameters['label'] = key;
-
+    parameters['icon'] = 'yellowMarker.png';
     var marker = new google.maps.Marker(parameters);
     google.maps.event.addListener(marker, 'dragend', function () {
         qtWidget.markerMoved(key, marker.position.lat(), marker.position.lng())
@@ -98,11 +98,11 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function displayAllRout(listCoords) {
+async function displayAllRout(listCoords, bestTour) {
     var directionsService = new google.maps.DirectionsService;
     for(var i = 0; i < listCoords.length-1; i++) {
-        var currentCoord = new google.maps.LatLng(listCoords[i].latitude, listCoords[i].longitude);
-        var nextCoord = new google.maps.LatLng(listCoords[i+1].latitude, listCoords[i+1].longitude);
+        var currentCoord = new google.maps.LatLng(listCoords[bestTour[i]][0], listCoords[bestTour[i]][1]);
+        var nextCoord = new google.maps.LatLng(listCoords[bestTour[i+1]][0], listCoords[bestTour[i+1]][1]);
         directionsService.route({
             origin: currentCoord,
             destination: nextCoord,
@@ -111,13 +111,13 @@ async function displayAllRout(listCoords) {
             if (status === 'OK') {
                 var directionsDisplay = new google.maps.DirectionsRenderer;
                 directionsDisplay.setMap(map);
-                directionsDisplay.setOptions({suppressMarkers: true});
+                directionsDisplay.setOptions({suppressMarkers: true, polylineOptions: {strokeColor: 'red'}});
                 directionsDisplay.setDirections(response);
             } else {
             window.alert('Directions request failed due to ' + status);
             }
         });
-        await sleep(200);
+        await sleep(1000);
     }
 }
 

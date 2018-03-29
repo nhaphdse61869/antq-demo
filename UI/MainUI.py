@@ -123,14 +123,15 @@ class UIThread(QWidget):
         self.T_min = 0
         self.algorithm = "AntQ"
 
-        self.graphWP.acoParam.checkK.stateChanged.connect(self.enableSpinBox)
-        self.graphWP.antQParam.checkK.stateChanged.connect(self.enableSpinBox)
+        #self.graphWP.acoParam.checkK.stateChanged.connect(self.enableSpinBox)
+        #self.graphWP.antQParam.checkK.stateChanged.connect(self.enableSpinBox)
 
         self.graphWP.btn2.clicked.connect(self.runAlgorithm)
         self.graphWP.btn1.clicked.connect(self.applyPara)
         self.graphWP.btn4.clicked.connect(self.openFileDialog)
         self.graphWP.tabs.tabBarClicked.connect(self.checkCurrentTab)
         self.tabs2.tabBarClicked.connect(self.checkGoogleTab)
+        self.initParams("AntQ")
         #self.btn1.setGraphicsEffect()
         #self.show()
 
@@ -148,11 +149,17 @@ class UIThread(QWidget):
     def checkCurrentTab(self, pos):
         self.curTab = pos
         if pos == 2:
+            self.initParams("Simulated Annealing")
             self.graphWP.tabGraphs.removeTab(2)
             self.graphWP.tabGraphs.removeTab(1)
-        elif self.graphWP.tabGraphs.count() == 1:
+        elif self.graphWP.tabGraphs.count() == 1 and pos == 0 :
             self.graphWP.tabGraphs.addTab(self.graphWP.tabG2, "Mean Length")
             self.graphWP.tabGraphs.addTab(self.graphWP.tabG3, "Variance Length")
+            self.initParams("AntQ")
+        elif self.graphWP.tabGraphs.count() == 1 and pos == 1 :
+            self.graphWP.tabGraphs.addTab(self.graphWP.tabG2, "Mean Length")
+            self.graphWP.tabGraphs.addTab(self.graphWP.tabG3, "Variance Length")
+            self.initParams("ACO")
 
 
     def onMarkerRClick(self, key):
@@ -176,11 +183,11 @@ class UIThread(QWidget):
         #global numMarker, listMarker, numOfAgents
         self.numMarker += 1
         marker = {"latitude": latitude, "longitude": longitude}
-        self.listMarker.append(marker)
+        #self.listMarker.append(marker)
         self.gmap.addMarker(str(self.numMarker), latitude, longitude, **dict(
             title="Move me!"
         ))
-        self.graphWP.graph.add_coord((latitude, longitude))
+        #self.graphWP.graph.add_coord((latitude, longitude))
         self.graphWP.acoParam.numOfAgents.changeMax(self.numMarker)
         self.graphWP.antQParam.numOfAgents.changeMax(self.numMarker)
         print("LClick on ", latitude, longitude)
@@ -206,6 +213,31 @@ class UIThread(QWidget):
         size = self.value()
         label.setFont(QFont("Arial", size))
 
+    def initParams(self, algorithm):
+        for i in range(self.graphWP.paramLayout.count()):
+            self.graphWP.paramLayout.removeRow(i)
+        self.graphWP.paramLayout.update()
+        if algorithm == "AntQ":
+            self.graphWP.paramLayout.addRow(QLabel("Number of iteration: "), QLabel(str(self.Ite)))
+            self.graphWP.paramLayout.addRow(QLabel("Number of agent: "), QLabel(str(self.numAgents)))
+            self.graphWP.paramLayout.addRow(QLabel("Learning rate: "), QLabel(str(self.LR)))
+            self.graphWP.paramLayout.addRow(QLabel("Discount factor: "), QLabel(str(self.DF)))
+            self.graphWP.paramLayout.addRow(QLabel("Balance Rate: "), QLabel(str(self.BR)))
+            self.graphWP.paramLayout.addRow(QLabel("Delta: "), QLabel(str(self.delta)))
+            self.graphWP.paramLayout.addRow(QLabel("Beta: "), QLabel(str(self.delta)))
+        elif algorithm == "ACO":
+            self.graphWP.paramLayout.addRow(QLabel("Number of iteration: "), QLabel(str(self.Ite)))
+            self.graphWP.paramLayout.addRow(QLabel("Number of agent: "), QLabel(str(self.numAgents)))
+            self.graphWP.paramLayout.addRow(QLabel("Learning rate: "), QLabel(str(self.LR)))
+            self.graphWP.paramLayout.addRow(QLabel("Discount factor: "), QLabel(str(self.DF)))
+            self.graphWP.paramLayout.addRow(QLabel("Balance Rate: "), QLabel(str(self.BR)))
+            self.graphWP.paramLayout.addRow(QLabel("Delta: "), QLabel(str(self.delta)))
+            self.graphWP.paramLayout.addRow(QLabel("Beta: "), QLabel(str(self.delta)))
+        elif algorithm == "Simulated Annealing":
+            self.graphWP.paramLayout.addRow(QLabel("Number of iteration: "), QLabel(str(self.Ite)))
+            self.graphWP.paramLayout.addRow(QLabel("Beta: "), QLabel(str(self.delta)))
+            self.graphWP.paramLayout.addRow(QLabel("T_0: "), QLabel(str(self.T_0)))
+            self.graphWP.paramLayout.addRow(QLabel("T_min: "), QLabel(str(self.T_min)))
 
     def applyPara(self):
         try:
@@ -227,6 +259,7 @@ class UIThread(QWidget):
                         self.k_number = self.graphWP.antQParam.Knum.value()
                     else:
                         self.k_number = -1
+                    self.initParams("AntQ")
                 elif self.curTab == 1:
                     self.algorithm = "ACO"
                     self.delta = self.graphWP.acoParam.deltaSpin.value()
@@ -236,12 +269,14 @@ class UIThread(QWidget):
                     self.DF = self.graphWP.acoParam.discountFactor.value()
                     self.BR = self.graphWP.acoParam.balanceRate.value()
                     self.numAgents = self.graphWP.acoParam.numOfAgents.k
+                    self.initParams("ACO")
                 elif self.curTab == 2:
                     self.algorithm = "Simulated Annealing"
                     self.T_0 = self.graphWP.simAnnealParam.temperInit.value()
                     self.T_min = self.graphWP.simAnnealParam.temperEnd.value()
                     self.beta = self.graphWP.simAnnealParam.betaSpin.value()
                     self.Ite = self.graphWP.simAnnealParam.iterSpin.value()
+                    self.initParams("Simulated Annealing")
         except:
             (type, value, traceback) = sys.exc_info()
             sys.excepthook(type, value, traceback)

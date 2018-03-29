@@ -34,14 +34,15 @@ class TableLog(QWidget):
     def createTable(self):
         # Create table
         self.tableWidget = QTableWidget()
-        self.tableWidget.setColumnCount(7)
-        self.tableWidget.setHorizontalHeaderLabels(("Key","Name","NumberOfPoint","Algorithm","CreatedDate","Parameter","Action"))
+        self.tableWidget.setColumnCount(8)
+        self.tableWidget.setHorizontalHeaderLabels(("Key","Name","Number Of Point","Algorithm","Created Date","Parameter","Best Length","Action"))
 
         header = self.tableWidget.horizontalHeader()
-        header.setSectionResizeMode(6, QHeaderView.Stretch)
+        header.setStyleSheet("::section{Background-color:rgb(190,1,1)}")
+        header.setSectionResizeMode(7, QHeaderView.Stretch)
         header.resizeSection(1, 100)
         header.resizeSection(0, 50)
-        header.resizeSection(5, 200)
+        header.resizeSection(5, 300)
         # table selection change
 
     def addTableItem(self, log):
@@ -54,7 +55,7 @@ class TableLog(QWidget):
         self.tableWidget.setItem(row, 4, QTableWidgetItem(log.created_date))
         self.tableWidget.setItem(row, 5, QTableWidgetItem(str(log.parameter)))
         removeBtn = RemoveBtn(row, 'Remove', self.tableWidget, self.remove_log_function)
-        self.tableWidget.setCellWidget(row, 6, removeBtn)
+        self.tableWidget.setCellWidget(row, 7, removeBtn)
         #self.tableWidget.setItem(row, 6, '')
         #self.tableWidget.setItem(row, 7, '')
         #self.tableWidget.setItem(row, 8, '')
