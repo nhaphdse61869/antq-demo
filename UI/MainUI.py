@@ -375,7 +375,7 @@ class UIThread(QWidget):
             self.result_handler.start()
             self.algGraphEx = AntQGraph(matrix)
             self.algEx = AntQ(self.numAgents, self.Ite, self.algGraphEx,
-                         self.LR / 100, self.DF / 100, self.delta, self.beta, result=self.algorithm_result)
+                         self.LR / 100, self.DF / 100, self.delta, self.beta, global_best=False, result=self.algorithm_result)
             self.algEx.start()
 
 
