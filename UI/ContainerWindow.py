@@ -10,7 +10,7 @@ class App(QMainWindow):
     LOG, MAIN = range(2)
     def __init__(self):
         super().__init__()
-        self.title = 'PyQt5 menu - pythonspot.com'
+        self.title = 'Ant-Q Demo Application'
         self.left = 10
         self.top = 10
         self.width = 640

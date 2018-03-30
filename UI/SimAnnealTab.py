@@ -7,7 +7,7 @@ class SimAnnealTab(QWidget):
     def __init__(self):
         super().__init__()
         self.firstLayout = QGridLayout()
-        self.secondLayout = QHBoxLayout()
+        self.secondLayout = QVBoxLayout()
 
         self.temperInit = QSpinBox()
         self.temperEnd = QSpinBox()
@@ -29,6 +29,14 @@ class SimAnnealTab(QWidget):
         self.betaSpin.setValue(2)
         self.formLayout.addRow(QLabel("β:"), self.betaSpin)
         self.formContainer1.setLayout(self.formLayout)
-
+        self.formContainer6 = QGroupBox("Clustering")
+        self.formLayout5 = QFormLayout()
+        self.Knum = QSpinBox()
+        self.Knum.setMinimum(1)
+        self.Knum.setValue(1)
+        self.Knum.setMaximum(1000)
+        self.formLayout5.addRow(QLabel("K nums:"), self.Knum)
+        self.formContainer6.setLayout(self.formLayout5)
         self.secondLayout.addWidget(self.formContainer1)
+        self.secondLayout.addWidget(self.formContainer6)
 

@@ -45,17 +45,83 @@ function gmap_setZoom(zoom) {
     map.setZoom(zoom);
 }
 
-function gmap_addMarker(key, latitude, longitude, parameters) {
+function rgbToHex(r, g, b) {
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
 
+function change_color_based_on_cluster(number_cluster) {
+    var r = 255;
+    var g = 255;
+    var b = 255;
+    if(number_cluster % 3 == 0) {
+        r = 0;
+        g = 255/50 * number_cluster;
+    } else if(number_cluster % 3 == 1) {
+        g = 0;
+        b = 255/50 * number_cluster;
+    } else if(number_cluster % 3 == 2) {
+        b = 0;
+        r = 255/50 * number_cluster;
+    }
+    return rgbToHex(r, g, b);
+}
+
+function get_center_coords(listCoords) {
+    var total_X = 0;
+    var total_Y = 0;
+    var result = [];
+    for(var i = 0; i < listCoords.length; i++) {
+        total_X += listCoords[i][0];
+        total_Y += listCoords[i][1];
+    }
+    alert(total_X);
+    result['latitude'] = total_X / listCoords.length;
+    result['longitude'] = total_Y / listCoords.length;
+    alert("latitude: " + result['latitude'] +"|longitude: "+result['longitude']);
+    return result;
+}
+
+function draw_circle(center, max_r){
+    alert("max R:" + max_r);
+    var centerPoint = new google.maps.LatLng(center['latitude'], center['longitude']);
+    var cityCircle = new google.maps.Circle({
+            //strokeColor: '#FF0000',
+            strokeOpacity: 0.2,
+            strokeWeight: 2,
+            fillColor: '#FF0000',
+            fillOpacity: 0.35,
+            map: map,
+            center: centerPoint,
+            radius: Math.pow(2,max_r) * 3141.592654
+    });
+}
+
+function get_max_r(center, listCoords) {
+    var max_r = 0;
+    for(var i = 0; i < listCoords.length; i++) {
+        var curr_r = Math.sqrt(Math.pow(2, center['latitude']-listCoords[i][0]) + Math.pow(2, center['longitude']-listCoords[i][1]));
+        if(curr_r > max_r) {
+            max_r = curr_r;
+        }
+    }
+    return max_r;
+}
+
+function gmap_addMarker(key, latitude, longitude, parameters) {
     if (key in markers) {
         gmap_deleteMarker(key);
     }
 
     var coords = new google.maps.LatLng(latitude, longitude);
-    parameters['map'] = map
+    var icon  = marker_sympol(2);
+    var label = [];
+    label['text'] = key;
+    label['color'] = 'white';
+    parameters['map'] = map;
     parameters['position'] = coords;
-    parameters['label'] = key;
-    parameters['icon'] = 'yellowMarker.png';
+    parameters['label'] = label;
+    parameters['icon'] = icon;
+    //parameters['icon'] = 'yellowMarker.png';
     var marker = new google.maps.Marker(parameters);
     google.maps.event.addListener(marker, 'dragend', function () {
         qtWidget.markerMoved(key, marker.position.lat(), marker.position.lng())
@@ -72,6 +138,20 @@ function gmap_addMarker(key, latitude, longitude, parameters) {
 
     markers[key] = marker;
     return key;
+}
+
+function marker_sympol(number_cluster) {
+    var color = change_color_based_on_cluster(number_cluster);
+    return {
+        path: 'M 0,0 C -2,-20 -10,-22 -10,-30 A 10,10 0 1,1 10,-30 C 10,-22 2,-20 0,0 z',
+        fillColor: color,
+        primaryColor: 'white',
+        fillOpacity: 1,
+        strokeColor: '#000',
+        strokeWeight: 2,
+        scale: 1,
+        labelOrigin: new google.maps.Point(0,-25)
+    };
 }
 
 function calculateAndDisplayRoute(oLat, oLong, dLat, dLong) {
@@ -110,15 +190,24 @@ async function displayAllRout(listCoords, bestTour) {
         }, function (response, status) {
             if (status === 'OK') {
                 var directionsDisplay = new google.maps.DirectionsRenderer;
+                var color = change_color_based_on_cluster(i);
                 directionsDisplay.setMap(map);
-                directionsDisplay.setOptions({suppressMarkers: true, polylineOptions: {strokeColor: 'red'}});
+                directionsDisplay.setOptions({  suppressMarkers: true,
+                                                polylineOptions: {
+                                                        strokeColor: color,
+                                                        strokeOpacity: 0.5,
+                                                        strokeWeight: 10
+                                                }});
                 directionsDisplay.setDirections(response);
             } else {
-            window.alert('Directions request failed due to ' + status);
+                window.alert('Directions request failed due to ' + status);
             }
         });
         await sleep(1000);
     }
+    //var center = get_center_coords(listCoords);
+    //var max_r = get_max_r(center, listCoords);
+    //draw_circle(center, max_r);
 }
 
 function displayAllRouteVer2(listCoords, bestTour) {

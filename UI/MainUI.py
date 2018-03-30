@@ -215,7 +215,7 @@ class UIThread(QWidget):
 
     def initParams(self, algorithm):
         for i in range(self.graphWP.paramLayout.count()):
-            self.graphWP.paramLayout.removeRow(i)
+            self.graphWP.paramLayout.removeRow(0)
         self.graphWP.paramLayout.update()
         if algorithm == "AntQ":
             self.graphWP.paramLayout.addRow(QLabel("Number of iteration: "), QLabel(str(self.Ite)))
@@ -255,10 +255,10 @@ class UIThread(QWidget):
                     self.DF = self.graphWP.antQParam.discountFactor.value()
                     self.BR = self.graphWP.antQParam.balanceRate.value()
                     self.numAgents = self.graphWP.antQParam.numOfAgents.k
-                    if self.graphWP.antQParam.checkK.isChecked() == True:
-                        self.k_number = self.graphWP.antQParam.Knum.value()
-                    else:
-                        self.k_number = -1
+                    #if self.graphWP.antQParam.checkK.isChecked() == True:
+                    #    self.k_number = self.graphWP.antQParam.Knum.value()
+                    #else:
+                    #    self.k_number = -1
                     self.initParams("AntQ")
                 elif self.curTab == 1:
                     self.algorithm = "ACO"

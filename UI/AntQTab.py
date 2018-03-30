@@ -22,8 +22,8 @@ class AntQTab(QWidget):
         self.subTopParaLayoutUp.addWidget(self.titleNum)
         self.subTopParaLayoutUp.addWidget(self.numText)
         self.subTopParaLayoutDown.addWidget(self.numOfAgents.thresh_sld)
-        self.subTopParaLayoutDown1.addWidget(QLabel('Check Genetic:'))
-        self.subTopParaLayoutDown1.addWidget(self.geneticBox)
+        #self.subTopParaLayoutDown1.addWidget(QLabel('Check Genetic:'))
+        #self.subTopParaLayoutDown1.addWidget(self.geneticBox)
 
         self.topParaLayout.addLayout(self.subTopParaLayoutUp)
         self.topParaLayout.addLayout(self.subTopParaLayoutDown)

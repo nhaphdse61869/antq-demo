@@ -1,3 +1,4 @@
+import os
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
@@ -34,15 +35,20 @@ class TableLog(QWidget):
     def createTable(self):
         # Create table
         self.tableWidget = QTableWidget()
-        self.tableWidget.setColumnCount(8)
-        self.tableWidget.setHorizontalHeaderLabels(("Key","Name","Number Of Point","Algorithm","Created Date","Parameter","Best Length","Action"))
+        self.tableWidget.setColumnCount(9)
+        self.tableWidget.setHorizontalHeaderLabels(("Key","Name","Number Of Point","Number Of Cluster","Algorithm",
+                                                    "Created Date","Best Length","Action",""))
 
         header = self.tableWidget.horizontalHeader()
-        header.setStyleSheet("::section{Background-color:rgb(190,1,1)}")
+        header.setStyleSheet("::section{Background-color:rgb(128, 128, 128)}")
         header.setSectionResizeMode(7, QHeaderView.Stretch)
         header.resizeSection(1, 100)
         header.resizeSection(0, 50)
-        header.resizeSection(5, 300)
+        header.resizeSection(3, 150)
+        header.resizeSection(4, 180)
+        header.resizeSection(5, 180)
+        header.resizeSection(7, 125)
+        header.resizeSection(8, 50)
         # table selection change
 
     def addTableItem(self, log):
@@ -51,14 +57,12 @@ class TableLog(QWidget):
         self.tableWidget.setItem(row, 0, QTableWidgetItem(str(log.key)))
         self.tableWidget.setItem(row, 1, QTableWidgetItem(str(log.name)))
         self.tableWidget.setItem(row, 2, QTableWidgetItem(str(log.number_of_point)))
-        self.tableWidget.setItem(row, 3, QTableWidgetItem(log.algorithm))
-        self.tableWidget.setItem(row, 4, QTableWidgetItem(log.created_date))
-        self.tableWidget.setItem(row, 5, QTableWidgetItem(str(log.parameter)))
+        self.tableWidget.setItem(row, 4, QTableWidgetItem(log.algorithm))
+        self.tableWidget.setItem(row, 5, QTableWidgetItem(log.created_date))
+        #self.tableWidget.setItem(row, 5, QTableWidgetItem(str(log.parameter)))
         removeBtn = RemoveBtn(row, 'Remove', self.tableWidget, self.remove_log_function)
         self.tableWidget.setCellWidget(row, 7, removeBtn)
-        #self.tableWidget.setItem(row, 6, '')
-        #self.tableWidget.setItem(row, 7, '')
-        #self.tableWidget.setItem(row, 8, '')
+        self.tableWidget.setCellWidget(row, 8, DetailIcon(str(log.parameter)))
 
     @pyqtSlot()
     def on_click(self):
@@ -82,3 +86,11 @@ class RemoveBtn(QPushButton):
         except:
             (type, value, traceback) = sys.exc_info()
             sys.excepthook(type, value, traceback)
+
+class DetailIcon(QLabel):
+    def __init__(self, param):
+        super().__init__()
+        path = os.path.dirname(os.path.abspath(__file__))
+        self.setPixmap(QPixmap(os.path.join(path, 'information.png')))
+        self.setToolTip(param)
+

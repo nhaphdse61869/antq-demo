@@ -38,9 +38,12 @@ class RouteFrame(QWidget):
         #self.addRoute(self.model, 'A', 'A')
 
         mainLayout = QVBoxLayout()
+        self.clusterCb = QComboBox()
+        self.clusterCb.addItem("All")
+        mainLayout.addWidget(self.clusterCb)
         mainLayout.addWidget(self.dataGroupBox)
         self.setLayout(mainLayout)
-
+        self.clusterCb.currentIndexChanged.connect(self.selectedCluster)
         self.show()
 
     def createRouteTable(self, parent):
@@ -59,3 +62,6 @@ class RouteFrame(QWidget):
     def clearAllRecords(self):
         root = self.dataView.model()
         root.removeRows(0, root.rowCount())
+
+    def selectedCluster(self, pos):
+        print(pos)
