@@ -6,6 +6,7 @@ matplotlib.use('Qt5Agg')
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+from matplotlib import pyplot as plt
 
 # Make sure that we are using QT5
 
@@ -19,6 +20,7 @@ class GraphCanvas(FigureCanvas):
         self.points = []
         self.axes.set_axis_off()
         self.axes.autoscale_view()
+
         FigureCanvas.__init__(self, fig)
         self.setParent(parent)
         FigureCanvas.setSizePolicy(self,
@@ -75,9 +77,9 @@ class GraphCanvas(FigureCanvas):
 class LengthChartCanvas(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
         fig = Figure(figsize=(width, height), dpi=dpi)
-
         self.axes = fig.add_subplot(111)
         self.lines = []
+
         self.axes.autoscale()
         FigureCanvas.__init__(self, fig)
         self.setParent(parent)
@@ -93,7 +95,8 @@ class LengthChartCanvas(FigureCanvas):
         # Update line
         self.lines[-1].set_xdata(np.append(self.lines[-1].get_xdata(),[x]))
         self.lines[-1].set_ydata(np.append(self.lines[-1].get_ydata(),[y]))
-        self.axes.autoscale()
+        self.axes.relim()
+        self.axes.autoscale_view(True, True, True)
         self.draw()
 
     def add_new_line(self, xdata, ydata):
