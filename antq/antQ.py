@@ -1,14 +1,14 @@
+import queue
 import sys
 
-from PyQt5.QtCore import QThread, pyqtSignal
-
+from PyQt5.QtCore import QThread
+from queue import Queue
 from antq.ant import Ant
 import numpy as np
 
 
 class AntQ(QThread):
-    run_finished = pyqtSignal()
-    def __init__(self, number_of_ants, num_of_iteration, graph, alpha=.1, gamma=.3, delta=1, beta=2, w=10, renderFunc=None, result_queue=None):
+    def __init__(self, number_of_ants, num_of_iteration, graph, alpha=.1, gamma=.3, delta=1, beta=2, w=10, global_best=True, result=None):
         QThread.__init__(self)
         self.number_of_ants = number_of_ants
         self.alpha = alpha
@@ -18,17 +18,18 @@ class AntQ(QThread):
         self.graph = graph
         self.num_of_iteration = num_of_iteration
         self.w = w
+        self.best_tours = []
         self.best_tour = []
         self.best_tour_len = sys.maxsize
         self.best_ant = -1
         self.ants = []
-        self.renderFunc = renderFunc
-        self.list_best_tour = []
-        self.list_best_len = []
+        self.global_best = global_best
+        self.best_lens = []
         self.list_avg = []
         self.list_var = []
         self.list_dev = []
-        self.result_queue = result_queue
+        self.result = result
+        self.best_iter = 0
 
     def delay_val(self):
         p_sum = 0
@@ -39,20 +40,19 @@ class AntQ(QThread):
             else:
                 s = self.best_tour[0]
             p_sum += self.graph.distance(r, s)
-        return self.w / p_sum
+        if p_sum != 0:
+            return self.w / p_sum
+        else:
+            return 0
 
-    def delay_ant_q(self):
-        nodes_valid_from_r = self.best_tour[:]
-        for i, node in enumerate(self.best_tour):
+    def delay_ant_q(self, tour):
+        for i, node in enumerate(tour):
             r = node
-            nodes_valid_from_r.remove(r)
-            if i < len(self.best_tour) - 1:
-                s = self.best_tour[i + 1]
-                ant_q_val = (1 - self.alpha) * self.graph.antQ_val(r, s) + self.alpha * (
-                        self.delay_val() + self.gamma * self.graph.max_aq(r, nodes_valid_from_r)[1])
+            if i < len(tour) - 1:
+                s = tour[i + 1]
             else:
-                s = self.best_tour[0]
-                ant_q_val = (1 - self.alpha) * self.graph.antQ_val(r, s) + self.alpha * self.delay_val()
+                s = tour[0]
+            ant_q_val = (1 - self.alpha) * self.graph.antQ_val(r, s) + self.alpha * self.delay_val()
             self.graph.aq_mat[r][s] = ant_q_val
 
     def create_ants(self):
@@ -79,7 +79,9 @@ class AntQ(QThread):
         variance = self.iter_variance()
         return np.math.sqrt(variance)
 
-    def iter_run(self):
+    def iter_run(self, iter):
+        iter_min = sys.maxsize
+        iter_best = []
         self.create_ants()
         for j in range(0, self.graph.num_node):
             for ant in self.ants:
@@ -90,18 +92,29 @@ class AntQ(QThread):
                 self.best_tour = ant.tour
                 self.best_tour_len = ant.tour_len
                 self.best_ant = ant.id
+                self.best_iter = iter
+
+            if ant.tour_len < iter_min:
+                iter_min = ant.tour_len
+                iter_best = ant.tour
 
         iter_avg = self.iter_avg()
         iter_variance = self.iter_variance()
-        iter_deviation = self.iter_deviation()
 
-        return iter_avg, iter_variance, iter_deviation
+        return iter_avg, iter_variance, iter_best
 
     def run(self):
         for i in range(0, self.num_of_iteration):
-            print("Iteration[%s]" % i)
-            iter_avg, iter_variance, iter_deviation = self.iter_run()
-            self.delay_ant_q()
+            # print("Iteration[%s]" % i)
+            iter_avg, iter_variance, iter_best = self.iter_run(i)
+            iter_deviation = np.math.sqrt(iter_variance)
+
+            if self.global_best:
+                update_tour = self.best_tour
+            else:
+                update_tour = iter_best
+
+            self.delay_ant_q(update_tour)
 
             #self.renderFunc(i, self.best_tour_len, self.best_tour, iter_avg, iter_variance, iter_deviation)
             #self.iteration_finished.emit(i, self.best_tour_len, self.best_tour, iter_avg, iter_variance, iter_deviation)
@@ -112,13 +125,15 @@ class AntQ(QThread):
             aIter_result["iter_avg"] = iter_avg
             aIter_result["iter_variance"] = iter_variance
             aIter_result["iter_deviation"] = iter_deviation
-            self.result_queue.put(aIter_result)
-            self.list_best_tour.append(self.best_tour)
-            self.list_best_len.append(self.best_tour_len)
+            if self.result is None:
+                self.result = Queue()
+            self.result.put(aIter_result)
+            # print("CLGT")
+            self.best_tours.append(self.best_tour)
+            self.best_lens.append(self.best_tour_len)
             self.list_avg.append(iter_avg)
             self.list_var.append(iter_variance)
             self.list_dev.append(iter_deviation)
-        self.run_finished.emit()
 
 
 

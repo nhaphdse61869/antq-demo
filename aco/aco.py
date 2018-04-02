@@ -28,6 +28,7 @@ class ACO(QThread):
         :param strategy: pheromone update strategy. 0 - ant-cycle, 1 - ant-quality, 2 - ant-density
         """
         QThread.__init__(self)
+        self.clusters_point = [list(range(graph.mat_size))]
         self.graph = graph
         self.Q = q
         self.rho = rho

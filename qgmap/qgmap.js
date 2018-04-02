@@ -2,10 +2,35 @@
 var map;
 var markers = [];
 var qtWidget;
+var directionsDisplays = [];
 
 new QWebChannel(qt.webChannelTransport, function (channel) {
     qtWidget = channel.objects.qtWidget;
 });
+
+// Sets the map on all markers in the array.
+  function setMapOnAll(map) {
+    for (var i = 0; i < markers.length; i++) {
+      markers[i].setMap(map);
+    }
+  }
+
+// Removes the markers from the map, but keeps them in the array.
+function clearMarkers() {
+    setMapOnAll(null);
+}
+
+  // Deletes all markers in the array by removing references to them.
+function deleteMarkers() {
+    clearMarkers();
+    markers = [];
+}
+
+function clearAllRoute(){
+      for (var i = 0; i < directionsDisplays.length; i++) {
+            directionsDisplays[i].setMap(null);
+        }
+}
 
 // main init function
 function initialize() {
@@ -107,13 +132,13 @@ function get_max_r(center, listCoords) {
     return max_r;
 }
 
-function gmap_addMarker(key, latitude, longitude, parameters) {
-    if (key in markers) {
+function gmap_addMarker(key, latitude, longitude, cluster_number, parameters) {
+    /*if (key in markers) {
         gmap_deleteMarker(key);
-    }
+    }*/
 
     var coords = new google.maps.LatLng(latitude, longitude);
-    var icon  = marker_sympol(2);
+    var icon  = marker_sympol(cluster_number);
     var label = [];
     label['text'] = key;
     label['color'] = 'white';
@@ -136,7 +161,7 @@ function gmap_addMarker(key, latitude, longitude, parameters) {
         qtWidget.markerRightClicked(key, marker.position.lat(), marker.position.lng())
     });
 
-    markers[key] = marker;
+    markers.push(marker);
     return key;
 }
 
@@ -178,7 +203,7 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function displayAllRout(listCoords, bestTour) {
+async function displayAllRout(listCoords, bestTour, cluster_number) {
     var directionsService = new google.maps.DirectionsService;
     for(var i = 0; i < listCoords.length-1; i++) {
         var currentCoord = new google.maps.LatLng(listCoords[bestTour[i]][0], listCoords[bestTour[i]][1]);
@@ -189,8 +214,8 @@ async function displayAllRout(listCoords, bestTour) {
             travelMode: 'DRIVING'
         }, function (response, status) {
             if (status === 'OK') {
+                var color = change_color_based_on_cluster(cluster_number);
                 var directionsDisplay = new google.maps.DirectionsRenderer;
-                var color = change_color_based_on_cluster(i);
                 directionsDisplay.setMap(map);
                 directionsDisplay.setOptions({  suppressMarkers: true,
                                                 polylineOptions: {
@@ -199,6 +224,7 @@ async function displayAllRout(listCoords, bestTour) {
                                                         strokeWeight: 10
                                                 }});
                 directionsDisplay.setDirections(response);
+                directionsDisplays.push(directionsDisplay)
             } else {
                 window.alert('Directions request failed due to ' + status);
             }

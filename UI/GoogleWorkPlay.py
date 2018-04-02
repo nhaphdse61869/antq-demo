@@ -5,6 +5,7 @@ from PyQt5.QtCore import *
 from UI.RouteFrame import *
 from UI.ResultFrame import *
 
+import traceback
 
 class GoogkeWP(QWidget):
 
@@ -34,17 +35,33 @@ class GoogkeWP(QWidget):
         self.botLayout.addWidget(self.routeFrame)
         self.setLayout(self.mainLayout)
 
-    def show_route_address(self, list_address, best_tour):
-        self.routeFrame.clearAllRecords()
-        for i in range(len(best_tour) - 1):
-            from_add = list_address[best_tour[i]]
-            to_add = list_address[best_tour[i + 1]]
-            self.routeFrame.addRoute(self.routeFrame.model, from_add, to_add)
+    def show_route_address(self, list_address, clusters_point, best_tour, cluster_number=0):
+        try:
+            self.routeFrame.clearAllRecords()
+            if cluster_number == 0:
+                # Show All Route
+                for n in range(len(best_tour)):
+                    for i in range(len(best_tour[n]) - 1):
+                        from_no = clusters_point[n][best_tour[n][i]]
+                        from_add = list_address[from_no]
+                        to_no = clusters_point[n][best_tour[n][i + 1]]
+                        to_add = list_address[to_no]
+                        self.routeFrame.addRoute(self.routeFrame.model, from_no + 1, from_add, to_no + 1, to_add, n + 1)
+            else:
+                cluster_number = cluster_number - 1
+                for i in range(len(best_tour[cluster_number]) - 1):
+                    from_no = clusters_point[cluster_number][best_tour[cluster_number][i]]
+                    from_add = list_address[from_no]
+                    to_no = clusters_point[cluster_number][best_tour[cluster_number][i + 1]]
+                    to_add = list_address[to_no]
+                    self.routeFrame.addRoute(self.routeFrame.model, from_no + 1, from_add, to_no + 1, to_add, cluster_number + 1)
+        except:
+            traceback.print_exc()
 
     def show_algorithm_parameter(self, parameter, algorithm):
         #Remove all row
         for i in range(self.paramLayout.count()):
-            self.paramLayout.removeRow(i)
+            self.paramLayout.removeRow(0)
 
         #Add algorithm
         self.paramLayout.addRow(QLabel("Algorithm: "), QLabel(algorithm))
@@ -55,7 +72,7 @@ class GoogkeWP(QWidget):
             self.paramLayout.addRow(QLabel("Discount factor: "), QLabel(str(parameter["discount_factor"])))
             self.paramLayout.addRow(QLabel("Delta: "), QLabel(str(parameter["delta"])))
             self.paramLayout.addRow(QLabel("Beta: "), QLabel(str(parameter["beta"])))
-            k_number = int(parameter["k_number"])
+            k_number = int(parameter["number_of_cluster"])
             if k_number <= 0:
                 k_number = 1
             self.paramLayout.addRow(QLabel("Number of cluster: "), QLabel(str(k_number)))

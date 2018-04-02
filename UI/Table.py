@@ -15,6 +15,7 @@ class TableLog(QWidget):
         self.width = 300
         self.height = 200
         self.remove_log_function = remove_log_function
+        self.remove_buttons = []
         self.initUI()
 
     def initUI(self):
@@ -57,10 +58,13 @@ class TableLog(QWidget):
         self.tableWidget.setItem(row, 0, QTableWidgetItem(str(log.key)))
         self.tableWidget.setItem(row, 1, QTableWidgetItem(str(log.name)))
         self.tableWidget.setItem(row, 2, QTableWidgetItem(str(log.number_of_point)))
+        self.tableWidget.setItem(row, 3, QTableWidgetItem(str(log.parameter["number_of_cluster"])))
         self.tableWidget.setItem(row, 4, QTableWidgetItem(log.algorithm))
         self.tableWidget.setItem(row, 5, QTableWidgetItem(log.created_date))
+        self.tableWidget.setItem(row, 6, QTableWidgetItem(str(log.result["best_length"])))
         #self.tableWidget.setItem(row, 5, QTableWidgetItem(str(log.parameter)))
-        removeBtn = RemoveBtn(row, 'Remove', self.tableWidget, self.remove_log_function)
+        removeBtn = RemoveBtn(row, 'Remove', self.tableWidget, self.remove_log_function, self.remove_buttons)
+        self.remove_buttons.append(removeBtn)
         self.tableWidget.setCellWidget(row, 7, removeBtn)
         self.tableWidget.setCellWidget(row, 8, DetailIcon(str(log.parameter)))
 
@@ -71,18 +75,22 @@ class TableLog(QWidget):
             print(currentQTableWidgetItem.row(), currentQTableWidgetItem.column(), currentQTableWidgetItem.text())
 
 class RemoveBtn(QPushButton):
-    def __init__(self, row, name, table, remove_log_function):
+    def __init__(self, row, name, table, remove_log_function, remove_buttons):
         super().__init__()
         self.setText(name)
         self.row = row
         self.remove_log_function = remove_log_function
         self.tableWidget = table
+        self.remove_buttons = remove_buttons
         self.clicked.connect(self.removeLog)
 
     def removeLog(self):
         try:
             self.tableWidget.removeRow(self.row)
             self.remove_log_function(self.row)
+            for i in range(self.row + 1, len(self.remove_buttons)):
+                self.remove_buttons[i].row -= 1
+            del self.remove_buttons[self.row]
         except:
             (type, value, traceback) = sys.exc_info()
             sys.excepthook(type, value, traceback)

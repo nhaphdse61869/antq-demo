@@ -5,8 +5,141 @@ matplotlib.use('Qt5Agg')
 from PyQt5 import QtCore, QtWidgets
 import networkx as nx
 import numpy as np
+import time
+import traceback
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
+from matplotlib import pyplot as plt
+from matplotlib.animation import FuncAnimation
+
+class AnimationGraphCanvas(FigureCanvas):
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+
+        self.fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = self.fig.add_subplot(111)
+        self.axes.set_axis_off()
+        self.axes.autoscale_view()
+
+        self.draw_done = True
+        self.max_frame = 0
+
+        self.list_point = []
+        self.list_annotation = []
+        self.scatter = self.axes.scatter([],[])
+        self.animation_animation = None
+
+        FigureCanvas.__init__(self, self.fig)
+        self.setParent(parent)
+
+        FigureCanvas.setSizePolicy(self,
+                                   QtWidgets.QSizePolicy.Expanding,
+                                   QtWidgets.QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry(self)
+
+
+    def init_coord_data(self, list_point):
+        self.list_point = list_point
+
+        for i in range(len(list_point)):
+            anno = self.axes.annotate(str(i + 1), list_point[i])
+            self.list_annotation.append(anno)
+
+        list_x, list_y = self.get_listx_listy(list_point)
+        self.scatter = self.axes.scatter(list_x, list_y)
+        self.draw()
+
+    def get_listx_listy(self, list_point):
+        list_x = []
+        list_y = []
+        for i in range(len(list_point)):
+            list_x.append(list_point[i][0])
+            list_y.append(list_point[i][1])
+        return list_x, list_y
+
+    def update_cluster(self, clusters_point):
+        self.clusters_point = clusters_point
+        list_x, list_y = self.get_listx_listy(self.list_point)
+
+        self.point_cluster = [0 for x in range(len(self.list_point))]
+        for cluster_number in range(len(clusters_point)):
+            for i in range(len(clusters_point[cluster_number])):
+                self.point_cluster[clusters_point[cluster_number][i]] = cluster_number
+
+        self.list_line = []
+        for cluster_number in range(len(clusters_point)):
+            line, = self.axes.plot([],[])
+            self.list_line.append(line)
+        self.scatter = self.axes.scatter(list_x, list_y, c=self.point_cluster)
+        self.axes.set_axis_off()
+        self.draw()
+
+    def animate_cluster(self, num, list_x, list_y):
+        self.scatter = self.axes.scatter(list_x, list_y, c=self.point_cluster)
+        return self.scatter,
+
+    def update_cluster_graph(self, clusters_best_tour):
+        try:
+            self.max_frame = 0
+            clusters_list_x = []
+            clusters_list_y = []
+            clusters_color = []
+            self.draw_done = False
+
+            print(clusters_best_tour)
+
+            for cluster_number in range(len(clusters_best_tour)):
+                # Get cluster color
+                c = self.scatter.to_rgba(cluster_number)
+                # Get number of max point
+                if len(clusters_best_tour[cluster_number]) > self.max_frame:
+                    self.max_frame = len(clusters_best_tour[cluster_number])
+                # Get best tour list
+                list_x = []
+                list_y = []
+                for i in range(len(clusters_best_tour[cluster_number])):
+                    # Color index
+                    x = self.list_point[self.clusters_point[cluster_number][clusters_best_tour[cluster_number][i]]][0]
+                    y = self.list_point[self.clusters_point[cluster_number][clusters_best_tour[cluster_number][i]]][1]
+                    list_x.append(x)
+                    list_y.append(y)
+
+                x = self.list_point[self.clusters_point[cluster_number][clusters_best_tour[cluster_number][0]]][0]
+                y = self.list_point[self.clusters_point[cluster_number][clusters_best_tour[cluster_number][0]]][1]
+                list_x.append(x)
+                list_y.append(y)
+
+                clusters_list_x.append(list_x)
+                clusters_list_y.append(list_y)
+                clusters_color.append(c)
+
+            self.max_frame += 2
+            max_point = self.max_frame
+            print("What the fuck {}".format(self.max_frame))
+            print("{} - {} - {}".format(clusters_list_x, clusters_list_y, clusters_color))
+
+            for num in range(max_point):
+                self.animate_cluster_graph(num, clusters_list_x, clusters_list_y, clusters_color)
+                self.draw()
+                time.sleep(0.2)
+
+
+        except:
+            traceback.print_exc()
+
+    def animate_cluster_graph(self, num, clusters_list_x, clusters_list_y, clusters_color):
+        for i in range(len(clusters_list_x)):
+            if (num <= len(clusters_list_x[i])):
+                self.list_line[i].set_data(clusters_list_x[i][:num], clusters_list_y[i][:num])
+                self.list_line[i].set_color(clusters_color[i])
+
+        if num == self.max_frame - 1:
+            self.draw_done = True
+
+    def clear_graph(self):
+        self.axes.clear()
+        self.axes.set_axis_off()
+        self.draw()
+
 
 class GraphCanvas(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):

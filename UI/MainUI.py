@@ -1,4 +1,4 @@
-
+from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtGui import QFont, QStandardItemModel, QColor
 import sys
 from UI.BlinkingButton import StateWidget
@@ -8,7 +8,7 @@ from UI.FileDialog import *
 from qgmap.common import QGoogleMap
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-from figure.chart import LengthChartCanvas, GraphCanvas
+from figure.chart import LengthChartCanvas, GraphCanvas, AnimationGraphCanvas
 from antq.antQ import AntQ
 from antq.antQGraph import AntQGraph
 from UI.Filter import Filter
@@ -20,6 +20,8 @@ from UI.ACOTab import *
 from UI.GraphWorkPlay import *
 from UI.GoogleWorkPlay import *
 import datetime
+import time
+import traceback
 from util.logging import LogIO, Log
 from hierarchy.antqCluster import *
 from hierarchy.sa import *
@@ -28,6 +30,7 @@ class UIThread(QWidget):
 
     def __init__(self):
         super().__init__()
+        self.google_map_selected_log = None
         self.best_tour = []
         self.list_point = []
         self.dist_matrix = []
@@ -53,7 +56,10 @@ class UIThread(QWidget):
         self.tabGM.layout = QVBoxLayout()
         self.tabGM.setLayout(self.tabGM.layout)
         self.h.addWidget(self.tabs2)
-        self.graph = GraphCanvas(width=6, height=5, dpi=110)
+
+        self.graph = AnimationGraphCanvas()
+
+        #self.graph = GraphCanvas(width=6, height=5, dpi=110)
         self.tabGraph.layout = QVBoxLayout()
         self.tabGraph.setLayout(self.tabGraph.layout)
         self.tabGraph.layout.addWidget(self.graph)
@@ -137,6 +143,8 @@ class UIThread(QWidget):
 
         #Google Map WP widget
         self.googleWP.showRoute.clicked.connect(self.run_google_map_log)
+        self.googleWP.routeFrame.clusterCb.currentIndexChanged.connect(self.google_map_change_cluster)
+
 
     def checkGoogleTab(self, pos):
         if pos == 1:
@@ -255,6 +263,9 @@ class UIThread(QWidget):
                     self.DF = self.graphWP.antQParam.discountFactor.value()
                     self.BR = self.graphWP.antQParam.balanceRate.value()
                     self.numAgents = self.graphWP.antQParam.numOfAgents.k
+                    self.k_number = self.graphWP.antQParam.Knum.value()
+                    if self.k_number < 2:
+                        self.k_number = 1
                     #if self.graphWP.antQParam.checkK.isChecked() == True:
                     #    self.k_number = self.graphWP.antQParam.Knum.value()
                     #else:
@@ -269,6 +280,7 @@ class UIThread(QWidget):
                     self.DF = self.graphWP.acoParam.discountFactor.value()
                     self.BR = self.graphWP.acoParam.balanceRate.value()
                     self.numAgents = self.graphWP.acoParam.numOfAgents.k
+                    self.k_number = 1
                     self.initParams("ACO")
                 elif self.curTab == 2:
                     self.algorithm = "Simulated Annealing"
@@ -276,14 +288,11 @@ class UIThread(QWidget):
                     self.T_min = self.graphWP.simAnnealParam.temperEnd.value()
                     self.beta = self.graphWP.simAnnealParam.betaSpin.value()
                     self.Ite = self.graphWP.simAnnealParam.iterSpin.value()
+                    self.k_number = 1
                     self.initParams("Simulated Annealing")
         except:
             (type, value, traceback) = sys.exc_info()
             sys.excepthook(type, value, traceback)
-
-
-
-
 
     # Implement Algorithm
     def runAlgorithm(self):
@@ -293,156 +302,178 @@ class UIThread(QWidget):
         else :
             self.applyPara()
             self.algorithm_result = Queue()
-
-            self.result_handler = Thread(target=self.drawChart)
-            self.result_handler.start()
+            print("Init xong chua")
+            try:
+                self.result_handler = Thread(target=self.drawChart)
+                self.result_handler.start()
+            except:
+                traceback.print_exc()
 
             if self.algorithm == "AntQ":
-                if self.graphWP.antQParam.checkK.isChecked() == True:
-                    #Create AntQ with Clustering
+                try:
+                    # Create AntQ with Clustering
                     self.algEx = AntQClustering(self.list_point, self.dist_matrix, self.k_number, self.numAgents,
                                                 self.Ite, self.LR / 100, self.DF / 100, self.delta,
                                                 self.beta, result_queue=self.algorithm_result)
-                else:
-                    #Create AntQ
-                    self.algGraphEx = AntQGraph(self.dist_matrix)
-                    self.algEx = AntQ(self.numAgents, self.Ite, self.algGraphEx,
-                                      self.LR / 100, self.DF / 100, self.delta, self.beta, result_queue=self.algorithm_result)
+                except:
+                    traceback.print_exc()
+
             elif self.algorithm == "ACO":
-                #Create ACO
-                self.algGraphEx = aco.Graph(self.dist_matrix, len(self.dist_matrix))
-                self.algEx = aco.ACO(self.numAgents, self.Ite, self.algGraphEx,
-                                      self.delta, self.beta, self.LR / 100, self.DF / 100, 1, result_queue=self.algorithm_result)
+                try:
+                    # Create ACO
+                    self.algGraphEx = aco.Graph(self.dist_matrix, len(self.dist_matrix))
+                    self.algEx = aco.ACO(self.numAgents, self.Ite, self.algGraphEx,
+                                         self.delta, self.beta, self.LR / 100, self.DF / 100, 1,
+                                         result_queue=self.algorithm_result)
+                except:
+                    traceback.print_exc()
+
             elif self.algorithm == "Simulated Annealing":
                 #Create Simulated Annealing
                 self.algEx = SimAnneal(self.dist_matrix, T=self.T_0, alpha=self.beta / 100,
                                        stopping_T=self.T_min, stopping_iter=self.Ite, result_queue=self.algorithm_result)
+
+            #Create cluster
+            self.graph.clear_graph()
+            self.graph.update_cluster(self.algEx.clusters_point)
             #Start algorithm
             self.algEx.run_finished.connect(self.algorithmFinished)
             self.algEx.start()
 
-
+    #@pyqtSlot(object)
     def drawChart(self):
-        while True:
-            result = self.algorithm_result.get()
+        try:
+            while True:
+                while self.graph.draw_done == False:
+                    time.sleep(0.1)
 
-            print("draw nè")
-            if result != None:
-                iteration = result["iteration"]
-                best_tour_len = result["best_tour_len"]
-                best_tour = result["best_tour"]
-                #Draw Graph
-                if self.best_tour != best_tour:
-                    self.best_tour = best_tour
-                    self.graph.clear_graph_tour()
-                    self.graph.draw_tour(best_tour)
+                result = self.algorithm_result.get()
+                if result != None:
+                    iteration = result["iteration"]
+                    best_tour_len = result["best_tour_len"]
+                    best_tour = result["best_tour"]
+                    if self.algorithm == "AntQ" or self.algorithm == "ACO":
+                        iter_avg = result["iter_avg"]
+                        iter_variance = result["iter_variance"]
+                        iter_deviation = result["iter_deviation"]
+                        # Draw chart
+                        if iteration == 0:
+                            pass
+                            # add new lines
+                            self.graphWP.chartBestLength.add_new_line(iteration, best_tour_len)
+                            self.graphWP.chartMeanLength.add_new_line(iteration, iter_avg)
+                            self.graphWP.chartVarianceLength.add_new_line(iteration, iter_variance)
+                        else:
+                            pass
+                            # update lines
+                            self.graphWP.chartBestLength.update_newest_line(iteration, best_tour_len)
+                            self.graphWP.chartMeanLength.update_newest_line(iteration, iter_avg)
+                            self.graphWP.chartVarianceLength.update_newest_line(iteration, iter_variance)
+                        if self.algorithm == "ACO":
+                            best_tour = [best_tour]
+                    elif self.algorithm == "Simulated Annealing":
+                        # Simulated Annealing
+                        best_tour = [best_tour]
+                        # Draw chart
+                        if iteration == 1:
+                            # add new lines
+                            self.graphWP.chartBestLength.add_new_line(iteration, best_tour_len)
+                        else:
+                            # update lines
+                            self.graphWP.chartBestLength.update_newest_line(iteration, best_tour_len)
 
-                if self.algorithm == "AntQ" or self.algorithm == "ACO":
-                    iter_avg = result["iter_avg"]
-                    iter_variance = result["iter_variance"]
-                    iter_deviation = result["iter_deviation"]
-                    # Draw chart
-                    if iteration == 0:
-                        # add new lines
-                        self.graphWP.chartBestLength.add_new_line(iteration, best_tour_len)
-                        self.graphWP.chartMeanLength.add_new_line(iteration, iter_avg)
-                        self.graphWP.chartVarianceLength.add_new_line(iteration, iter_variance)
-                    else:
-                        # update lines
-                        self.graphWP.chartBestLength.update_newest_line(iteration, best_tour_len)
-                        self.graphWP.chartMeanLength.update_newest_line(iteration, iter_avg)
-                        self.graphWP.chartVarianceLength.update_newest_line(iteration, iter_variance)
-                elif self.algorithm == "Simulated Annealing":
-                    # Simulated Annealing
-                    # Draw chart
-                    if iteration == 1:
-                        # add new lines
-                        self.graphWP.chartBestLength.add_new_line(iteration, best_tour_len)
-                    else:
-                        # update lines
-                        self.graphWP.chartBestLength.update_newest_line(iteration, best_tour_len)
-            else:
-                pass
-                # Test save log
-                #self.saveLog()
-                break
+                    # Draw Graph
+                    if self.best_tour != best_tour:
+                        self.best_tour = best_tour
+                        self.graph.update_cluster_graph(best_tour)
+                else:
+                    break
+        except:
+            traceback.print_exc()
+
 
     @pyqtSlot()
     def algorithmFinished(self):
-        #Create Log object
-        key = self.log_io.get_new_log_key()
-        name = key
-        number_of_point = len(self.list_point)
-        created_date = '{0:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
-        parameter = {}
-        dataset = {}
-        dataset["list_points"] = self.list_point
-        dataset["distance_matrix"] = self.dist_matrix
-        dataset["list_address"] = self.list_address
-        result = {}
-        if self.algorithm == "AntQ":
-            #AntQ
-            #Get all value
-            algorithm = "AntQ"
-            parameter["number_of_iteration"] = self.Ite
-            parameter["number_of_agent"] = self.numAgents
-            parameter["learnning_rate"] = self.LR / 100
-            parameter["discount_factor"] = self.DF / 100
-            parameter["delta"] = self.delta
-            parameter["beta"] = self.beta
-            parameter["k_number"] = self.k_number
-            result["best_tour"] = self.algEx.best_tour
-            result["best_length"] = self.algEx.best_tour_len
-            result["list_iteration"] = list(range(self.Ite))
-            result["list_best_tour"] = self.algEx.list_best_tour
-            result["list_best_len"] = self.algEx.list_best_len
-            result["list_avg"] = self.algEx.list_avg
-            result["list_deviation"] = self.algEx.list_dev
+        try:
+            # Create Log object
+            key = self.log_io.get_new_log_key()
+            name = key
+            number_of_point = len(self.list_point)
+            created_date = '{0:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
+            parameter = {}
+            parameter["number_of_cluster"] = self.k_number
+            dataset = {}
+            dataset["list_points"] = self.list_point
+            dataset["distance_matrix"] = self.dist_matrix
+            dataset["list_address"] = self.list_address
+            result = {}
+            if self.algorithm == "AntQ":
+                # AntQ
+                # Get all value
+                algorithm = "AntQ"
+                parameter["number_of_iteration"] = self.Ite
+                parameter["number_of_agent"] = self.numAgents
+                parameter["learnning_rate"] = self.LR / 100
+                parameter["discount_factor"] = self.DF / 100
+                parameter["delta"] = self.delta
+                parameter["beta"] = self.beta
+                result["clusters_point"] = self.algEx.clusters_point
+                result["best_tour"] = self.algEx.clusters_best_tour
+                result["best_length"] = self.algEx.best_len
+                result["list_iteration"] = list(range(self.Ite))
+                result["list_best_tour"] = self.algEx.list_clusters_best_tour
+                result["list_best_len"] = self.algEx.list_avg_best_length
+                result["list_avg"] = self.algEx.list_avg_mean_length
+                result["list_deviation"] = self.algEx.list_avg_dev
 
-            #Create log object
-            self.logging = Log(key=key, name=name, algorithm=algorithm, number_of_point=number_of_point,
-                               created_date= created_date, parameter=parameter, dataset=dataset, result=result)
-        elif self.algorithm == "ACO":
-            #ACO
-            # Get all value
-            algorithm = "ACO"
-            parameter["number_of_iteration"] = self.Ite
-            parameter["number_of_agent"] = self.numAgents
-            parameter["learnning_rate"] = self.LR / 100
-            parameter["discount_factor"] = self.DF / 100
-            parameter["delta"] = self.delta
-            parameter["beta"] = self.beta
-            result["best_tour"] = self.algEx.best_tour
-            result["best_length"] = self.algEx.best_tour_len
-            result["list_iteration"] = list(range(self.Ite))
-            result["list_best_tour"] = self.algEx.list_best_tour
-            result["list_best_len"] = self.algEx.list_best_len
-            result["list_avg"] = self.algEx.list_avg
-            result["list_deviation"] = self.algEx.list_dev
+                # Create log object
+                self.logging = Log(key=key, name=name, algorithm=algorithm, number_of_point=number_of_point,
+                                   created_date=created_date, parameter=parameter, dataset=dataset, result=result)
+            elif self.algorithm == "ACO":
+                # ACO
+                # Get all value
+                algorithm = "ACO"
+                parameter["number_of_iteration"] = self.Ite
+                parameter["number_of_agent"] = self.numAgents
+                parameter["learnning_rate"] = self.LR / 100
+                parameter["discount_factor"] = self.DF / 100
+                parameter["delta"] = self.delta
+                parameter["beta"] = self.beta
+                result["clusters_point"] = self.algEx.clusters_point
+                result["best_tour"] = [self.algEx.best_tour]
+                result["best_length"] = self.algEx.best_tour_len
+                result["list_iteration"] = list(range(self.Ite))
+                result["list_best_tour"] = self.algEx.list_best_tour
+                result["list_best_len"] = self.algEx.list_best_len
+                result["list_avg"] = self.algEx.list_avg
+                result["list_deviation"] = self.algEx.list_dev
 
-            # Create log object
-            self.logging = Log(key=key, name=name, algorithm=algorithm, number_of_point=number_of_point,
-                               created_date=created_date, parameter=parameter, dataset=dataset, result=result)
-        elif self.algorithm == "Simulated Annealing":
-            #Simulated Annealing
-            # Get all value
-            algorithm = "Simulated Annealing"
-            parameter["t0"] = self.T_0
-            parameter["t_min"] = self.T_min
-            parameter["beta"] = self.beta
-            parameter["number_of_iteration"] = self.Ite
-            result["best_tour"] = self.algEx.best_tour
-            result["best_length"] = self.algEx.best_tour_len
-            result["list_iteration"] = list(range(self.Ite))
-            result["list_best_tour"] = self.algEx.best_tours
-            result["list_best_len"] = self.algEx.best_lens
+                # Create log object
+                self.logging = Log(key=key, name=name, algorithm=algorithm, number_of_point=number_of_point,
+                                   created_date=created_date, parameter=parameter, dataset=dataset, result=result)
+            elif self.algorithm == "Simulated Annealing":
+                # Simulated Annealing
+                # Get all value
+                algorithm = "Simulated Annealing"
+                parameter["t0"] = self.T_0
+                parameter["t_min"] = self.T_min
+                parameter["beta"] = self.beta
+                parameter["number_of_iteration"] = self.Ite
+                result["clusters_point"] = self.algEx.clusters_point
+                result["best_tour"] = [self.algEx.best_tour]
+                result["best_length"] = self.algEx.best_tour_len
+                result["list_iteration"] = list(range(self.Ite))
+                result["list_best_tour"] = self.algEx.best_tours
+                result["list_best_len"] = self.algEx.best_lens
 
-            # Create log object
-            self.logging = Log(key=key, name=name, algorithm=algorithm, number_of_point=number_of_point,
-                               created_date=created_date, parameter=parameter, dataset=dataset, result=result)
+                # Create log object
+                self.logging = Log(key=key, name=name, algorithm=algorithm, number_of_point=number_of_point,
+                                   created_date=created_date, parameter=parameter, dataset=dataset, result=result)
 
-        self.algorithm_result.put(None)
-        self.saveLog()
+            self.algorithm_result.put(None)
+            self.saveLog()
+        except:
+            traceback.print_exc()
 
     def saveLog(self):
         qm = QMessageBox()
@@ -464,8 +495,8 @@ class UIThread(QWidget):
             self.graphWP.antQParam.Knum.setDisabled(True)
 
     def reset_graph(self):
-        self.graph.clear_graph_tour()
-        self.graph.draw_graph()
+#        self.graph.clear_graph_tour()
+#        self.graph.draw_graph()
         self.graphWP.chartBestLength.clear_graph()
         self.graphWP.chartMeanLength.clear_graph()
         self.graphWP.chartVarianceLength.clear_graph()
@@ -479,25 +510,49 @@ class UIThread(QWidget):
     def run_google_map_log(self):
         try:
             log_key = self.googleWP.rsFrame.currentKey
-            selected_log = self.log_io.get_log(int(log_key))
-            if len(selected_log.dataset["list_address"]) > 0:
+            self.google_map_selected_log = self.log_io.get_log(int(log_key))
+            if len(self.google_map_selected_log.dataset["list_address"]) > 0:
+                #Get log parameter
+                clusters_point = self.google_map_selected_log.result["clusters_point"]
+                list_point = self.google_map_selected_log.dataset["list_points"]
+                list_address = self.google_map_selected_log.dataset["list_address"]
+                best_tour = self.google_map_selected_log.result["best_tour"]
+                parameter = self.google_map_selected_log.parameter
+                algorithm = self.google_map_selected_log.algorithm
+
                 # Add marker
-                for i in range(len(selected_log.dataset["list_points"])):
-                    lat = selected_log.dataset["list_points"][i][0]
-                    long = selected_log.dataset["list_points"][i][1]
+                for n in range(len(clusters_point)):
+                    for i in range(len(clusters_point[n])):
+                        point = list_point[clusters_point[n][i]]
+                        lat = point[0]
+                        long = point[1]
+                        label = clusters_point[n][i] + 1
 
-                    self.gmap.addMarker(str(i + 1), lat, long, **dict(
-                        title="Click me"
-                    ))
+                        self.gmap.addMarker(str(label), lat, long, n, **dict(
+                            title="Click me"
+                        ))
 
-                # Show route
-                self.gmap.directss(selected_log.dataset["list_points"], selected_log.result["best_tour"])
+                # Show all cluster route
+                for n in range(len(clusters_point)):
+                    #Get list point of cluster
+                    cluster_point = [0 for x in range(len(clusters_point[n]))]
+                    for i in range(len(clusters_point[n])):
+                        cluster_point[i] = list_point[clusters_point[n][i]]
 
-                # Show address
-                self.googleWP.show_route_address(selected_log.dataset["list_address"], selected_log.result["best_tour"])
+                    #Show best tour of cluster
+                    self.gmap.directss(cluster_point, best_tour[n], n)
+
+                # Show all cluster address
+                self.googleWP.show_route_address(list_address, clusters_point, best_tour, 0)
 
                 # Show parameter
-                self.googleWP.show_algorithm_parameter(selected_log.parameter, selected_log.algorithm)
+                self.googleWP.show_algorithm_parameter(parameter, algorithm)
+
+                #Add cluster number to combobox
+                self.googleWP.routeFrame.clusterCb.clear()
+                self.googleWP.routeFrame.clusterCb.addItem("All")
+                for i in range(len(clusters_point)):
+                    self.googleWP.routeFrame.clusterCb.addItem("Cluster {}".format(i + 1))
 
             else:
                 error = QMessageBox()
@@ -505,3 +560,42 @@ class UIThread(QWidget):
         except:
             (type, value, traceback) = sys.exc_info()
             sys.excepthook(type, value, traceback)
+
+    def google_map_change_cluster(self, pos):
+        cluster_number = pos
+        if pos > 0:
+            try:
+                cluster_index = pos - 1
+                clusters_point = self.google_map_selected_log.result["clusters_point"]
+                list_point = self.google_map_selected_log.dataset["list_points"]
+                list_address = self.google_map_selected_log.dataset["list_address"]
+                best_tour = self.google_map_selected_log.result["best_tour"]
+
+                # Clear all marker and route
+                self.gmap.clearAllRoute()
+                self.gmap.clearAllMarker()
+
+                # Add marker
+                for i in range(len(clusters_point[cluster_index])):
+                    point = list_point[clusters_point[cluster_index][i]]
+                    lat = point[0]
+                    long = point[1]
+                    label = clusters_point[cluster_index][i] + 1
+
+                    self.gmap.addMarker(str(label), lat, long, cluster_index, **dict(
+                        title="Click me"
+                    ))
+
+                # Show all cluster route
+                # Get list point of cluster
+                cluster_point = [0 for x in range(len(clusters_point[cluster_index]))]
+                for i in range(len(clusters_point[cluster_index])):
+                    cluster_point[i] = list_point[clusters_point[cluster_index][i]]
+
+                # Show best tour of cluster
+                self.gmap.directss(cluster_point, best_tour[cluster_index], cluster_index)
+
+                # Show route address
+                self.googleWP.show_route_address(list_address, clusters_point, best_tour, pos)
+            except:
+                traceback.print_exc()

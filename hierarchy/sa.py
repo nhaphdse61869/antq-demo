@@ -19,6 +19,7 @@ class SimAnneal(QThread):
         self.result_queue = result_queue
         self.nodes = range(self.N)
 
+        self.clusters_point = [list(range(len(dist_matrix)))]
         self.best_tours = []
         self.best_lens = []
         self.list_avg = []

@@ -65,6 +65,17 @@ class UILog(QWidget):
             self.list_selected_log.append(select_log)
 
     def compareLogs(self):
+        #Check number of cluster
+        is_same_number_cluster = True
+        for i in range(len(self.list_selected_log) - 1):
+            for j in range(i + 1, len(self.list_selected_log)):
+                if self.list_selected_log[i].parameter["number_of_cluster"] != self.list_selected_log[j].parameter["number_of_cluster"]:
+                    is_same_number_cluster = False
+
+        if is_same_number_cluster == False:
+            error = QMessageBox()
+            error.critical(self, "Not same number cluster", "Error", QMessageBox.Ok)
+
         #Clear compare chart
         for i in reversed(range(self.botLeftConlayout.count())):
             self.botLeftConlayout.itemAt(i).widget().setParent(None)
