@@ -62,11 +62,10 @@ class TableLog(QWidget):
         self.tableWidget.setItem(row, 4, QTableWidgetItem(log.algorithm))
         self.tableWidget.setItem(row, 5, QTableWidgetItem(log.created_date))
         self.tableWidget.setItem(row, 6, QTableWidgetItem(str(log.result["best_length"])))
-        #self.tableWidget.setItem(row, 5, QTableWidgetItem(str(log.parameter)))
         removeBtn = RemoveBtn(row, 'Remove', self.tableWidget, self.remove_log_function, self.remove_buttons)
         self.remove_buttons.append(removeBtn)
         self.tableWidget.setCellWidget(row, 7, removeBtn)
-        self.tableWidget.setCellWidget(row, 8, DetailIcon(str(log.parameter)))
+        self.tableWidget.setCellWidget(row, 8, DetailIcon(log.algorithm, log.parameter))
 
     @pyqtSlot()
     def on_click(self):
@@ -96,9 +95,30 @@ class RemoveBtn(QPushButton):
             sys.excepthook(type, value, traceback)
 
 class DetailIcon(QLabel):
-    def __init__(self, param):
+    def __init__(self, algorithm, param):
         super().__init__()
         path = os.path.dirname(os.path.abspath(__file__))
         self.setPixmap(QPixmap(os.path.join(path, 'information.png')))
-        self.setToolTip(param)
+        tool_tip = ""
+        if algorithm == "AntQ":
+            tool_tip += "Number of Iteration: {}\n".format(param["number_of_iteration"])
+            tool_tip += "Number of Agent: {}\n".format(param["number_of_agent"])
+            tool_tip += "Learning Rate: {}\n".format(param["learnning_rate"])
+            tool_tip += "Discount Factor: {}\n".format(param["discount_factor"])
+            tool_tip += "Delta: {}\n".format(param["delta"])
+            tool_tip += "Beta: {}\n".format(param["beta"])
+            tool_tip += "Delayed reinforcement: {}".format(param["delayed_reinforcement"])
+        elif algorithm == "ACO":
+            tool_tip += "Number of Iteration: {}\n".format(param["number_of_iteration"])
+            tool_tip += "Number of Agent: {}\n".format(param["number_of_agent"])
+            tool_tip += "Learning Rate: {}\n".format(param["learnning_rate"])
+            tool_tip += "Discount Factor: {}\n".format(param["discount_factor"])
+            tool_tip += "Delta: {}\n".format(param["delta"])
+            tool_tip += "Beta: {}".format(param["beta"])
+        elif algorithm == "Simulated Annealing":
+            tool_tip += "Number of iteration: {}\n".format(param["number_of_iteration"])
+            tool_tip += "T0: {}\n".format(param["t0"])
+            tool_tip += "T min: {}\n".format(param["t_min"])
+            tool_tip += "Beta: {}".format(param["beta"])
+        self.setToolTip(tool_tip)
 

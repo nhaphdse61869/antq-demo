@@ -117,6 +117,8 @@ class UIThread(QWidget):
 
         # Parameter to excute algorithm
         # default values
+        self.global_best = True
+        self.k_number = 1
         self.curTab = 0
         self.delta = 1
         self.beta = 2
@@ -226,6 +228,7 @@ class UIThread(QWidget):
             self.graphWP.paramLayout.removeRow(0)
         self.graphWP.paramLayout.update()
         if algorithm == "AntQ":
+            self.graphWP.paramLayout.addRow(QLabel("Number of cluster: "), QLabel(str(self.k_number)))
             self.graphWP.paramLayout.addRow(QLabel("Number of iteration: "), QLabel(str(self.Ite)))
             self.graphWP.paramLayout.addRow(QLabel("Number of agent: "), QLabel(str(self.numAgents)))
             self.graphWP.paramLayout.addRow(QLabel("Learning rate: "), QLabel(str(self.LR)))
@@ -233,7 +236,12 @@ class UIThread(QWidget):
             self.graphWP.paramLayout.addRow(QLabel("Balance Rate: "), QLabel(str(self.BR)))
             self.graphWP.paramLayout.addRow(QLabel("Delta: "), QLabel(str(self.delta)))
             self.graphWP.paramLayout.addRow(QLabel("Beta: "), QLabel(str(self.delta)))
+            dr = "Iteration"
+            if self.global_best:
+                dr = "Global"
+            self.graphWP.paramLayout.addRow(QLabel("DR: "), QLabel(dr))
         elif algorithm == "ACO":
+            self.graphWP.paramLayout.addRow(QLabel("Number of cluster: "), QLabel(str(self.k_number)))
             self.graphWP.paramLayout.addRow(QLabel("Number of iteration: "), QLabel(str(self.Ite)))
             self.graphWP.paramLayout.addRow(QLabel("Number of agent: "), QLabel(str(self.numAgents)))
             self.graphWP.paramLayout.addRow(QLabel("Learning rate: "), QLabel(str(self.LR)))
@@ -242,6 +250,7 @@ class UIThread(QWidget):
             self.graphWP.paramLayout.addRow(QLabel("Delta: "), QLabel(str(self.delta)))
             self.graphWP.paramLayout.addRow(QLabel("Beta: "), QLabel(str(self.delta)))
         elif algorithm == "Simulated Annealing":
+            self.graphWP.paramLayout.addRow(QLabel("Number of cluster: "), QLabel(str(self.k_number)))
             self.graphWP.paramLayout.addRow(QLabel("Number of iteration: "), QLabel(str(self.Ite)))
             self.graphWP.paramLayout.addRow(QLabel("Beta: "), QLabel(str(self.delta)))
             self.graphWP.paramLayout.addRow(QLabel("T_0: "), QLabel(str(self.T_0)))
@@ -266,10 +275,10 @@ class UIThread(QWidget):
                     self.k_number = self.graphWP.antQParam.Knum.value()
                     if self.k_number < 2:
                         self.k_number = 1
-                    #if self.graphWP.antQParam.checkK.isChecked() == True:
-                    #    self.k_number = self.graphWP.antQParam.Knum.value()
-                    #else:
-                    #    self.k_number = -1
+                    dr = self.graphWP.antQParam.drcombobox.currentIndex()
+                    self.global_best = True
+                    if dr == 0:
+                        self.global_best = False
                     self.initParams("AntQ")
                 elif self.curTab == 1:
                     self.algorithm = "ACO"
@@ -314,7 +323,7 @@ class UIThread(QWidget):
                     # Create AntQ with Clustering
                     self.algEx = AntQClustering(self.list_point, self.dist_matrix, self.k_number, self.numAgents,
                                                 self.Ite, self.LR / 100, self.DF / 100, self.delta,
-                                                self.beta, result_queue=self.algorithm_result)
+                                                self.beta, global_best=self.global_best, result_queue=self.algorithm_result)
                 except:
                     traceback.print_exc()
 
@@ -411,6 +420,10 @@ class UIThread(QWidget):
                 # AntQ
                 # Get all value
                 algorithm = "AntQ"
+                dr = "Iteration best"
+                if self.global_best:
+                    dr = "Global best"
+                parameter["delayed_reinforcement"] = dr
                 parameter["number_of_iteration"] = self.Ite
                 parameter["number_of_agent"] = self.numAgents
                 parameter["learnning_rate"] = self.LR / 100

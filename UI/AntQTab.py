@@ -80,6 +80,14 @@ class AntQTab(QWidget):
         self.formLayout4.addRow(QLabel("Iter:"), self.iteration)
         self.formContainer5.setLayout(self.formLayout4)
 
+        self.formContainer7 = QGroupBox("DR")
+        self.formLayout6 = QFormLayout()
+        self.formContainer7.setLayout(self.formLayout6)
+        self.drcombobox = QComboBox()
+        self.drcombobox.addItem("Iteration best")
+        self.drcombobox.addItem("Global best")
+        self.formLayout6.addRow(QLabel("DR: "), self.drcombobox)
+
         self.formContainer6 = QGroupBox("Clustering")
         self.formLayout5 = QFormLayout()
         self.Knum = QSpinBox()
@@ -106,6 +114,7 @@ class AntQTab(QWidget):
         self.paraLayoutH.addLayout(self.paraLayoutRight)
         self.paraLayoutRight.addWidget(self.formContainer5)
         self.paraLayoutRight.addWidget(self.formContainer6)
+        self.paraLayoutRight.addWidget(self.formContainer7)
         #self.geneticBox.stateChanged.connect(self.enableSpinBox)
 
     #def enableSpinBox(self):

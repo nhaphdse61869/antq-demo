@@ -73,19 +73,6 @@ class ACOTab(QWidget):
         self.formLayout4.addRow(QLabel("Iter:"), self.iteration)
         self.formContainer5.setLayout(self.formLayout4)
 
-        self.formContainer6 = QGroupBox("Clustering")
-        self.formLayout5 = QFormLayout()
-        self.Knum = QSpinBox()
-        self.Knum.setMinimum(1)
-        self.Knum.setValue(1)
-        self.Knum.setMaximum(1000)
-        #self.Knum.setDisabled(True)
-        #self.checkK = QCheckBox()
-
-        #self.formLayout5.addRow(QLabel("Use:"), self.checkK)
-        self.formLayout5.addRow(QLabel("K nums:"), self.Knum)
-        self.formContainer6.setLayout(self.formLayout5)
-
         self.paraLayoutH = QHBoxLayout()
         self.paraLayoutLeft = QVBoxLayout()
         self.paraLayoutRight = QVBoxLayout()
@@ -96,4 +83,3 @@ class ACOTab(QWidget):
         self.paraLayoutLeft.addWidget(self.formContainer3)
         self.paraLayoutRight.addWidget(self.formContainer4)
         self.paraLayoutRight.addWidget(self.formContainer5)
-        self.paraLayoutRight.addWidget(self.formContainer6)

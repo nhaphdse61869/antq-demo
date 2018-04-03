@@ -39,7 +39,6 @@ class RouteFrame(QWidget):
 
         mainLayout = QVBoxLayout()
         self.clusterCb = QComboBox()
-        self.clusterCb.addItem("All")
         mainLayout.addWidget(self.clusterCb)
         mainLayout.addWidget(self.dataGroupBox)
         self.setLayout(mainLayout)

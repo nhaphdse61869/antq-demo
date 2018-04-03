@@ -66,6 +66,7 @@ class GoogkeWP(QWidget):
         #Add algorithm
         self.paramLayout.addRow(QLabel("Algorithm: "), QLabel(algorithm))
         if algorithm == "AntQ":
+            self.paramLayout.addRow(QLabel("Number of cluster: "), QLabel(str(parameter["number_of_cluster"])))
             self.paramLayout.addRow(QLabel("Number of iteration: "), QLabel(str(parameter["number_of_iteration"])))
             self.paramLayout.addRow(QLabel("Number of agent: "), QLabel(str(parameter["number_of_agent"])))
             self.paramLayout.addRow(QLabel("Learning rate: "), QLabel(str(parameter["learnning_rate"])))
@@ -78,6 +79,7 @@ class GoogkeWP(QWidget):
             self.paramLayout.addRow(QLabel("Number of cluster: "), QLabel(str(k_number)))
 
         elif algorithm == "ACO":
+            self.paramLayout.addRow(QLabel("Number of cluster: "), QLabel(str(parameter["number_of_cluster"])))
             self.paramLayout.addRow(QLabel("Number of iteration: "), QLabel(str(parameter["number_of_iteration"])))
             self.paramLayout.addRow(QLabel("Number of agent: "), QLabel(str(parameter["number_of_agent"])))
             self.paramLayout.addRow(QLabel("Learning rate: "), QLabel(str(parameter["learnning_rate"])))
@@ -85,6 +87,7 @@ class GoogkeWP(QWidget):
             self.paramLayout.addRow(QLabel("Delta: "), QLabel(str(parameter["delta"])))
             self.paramLayout.addRow(QLabel("Beta: "), QLabel(str(parameter["beta"])))
         elif algorithm == "Simulated Annealing":
+            self.paramLayout.addRow(QLabel("Number of cluster: "), QLabel(str(parameter["number_of_cluster"])))
             self.paramLayout.addRow(QLabel("Number of iteration: "), QLabel(str(parameter["number_of_iteration"])))
             self.paramLayout.addRow(QLabel("Initial T: "), QLabel(str(parameter["t0"])))
             self.paramLayout.addRow(QLabel("Minimum T: "), QLabel(str(parameter["t_min"])))
