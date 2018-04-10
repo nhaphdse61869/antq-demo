@@ -1,14 +1,144 @@
 import matplotlib
-import numpy as np
 
+# Make sure that we are using QT5
 matplotlib.use('Qt5Agg')
-
-from PyQt5 import QtWidgets
+from PyQt5 import QtCore, QtWidgets
+import networkx as nx
+import numpy as np
+import time
+import traceback
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib import pyplot as plt
+from matplotlib.animation import FuncAnimation
 
-# Make sure that we are using QT5
+class AnimationGraphCanvas(FigureCanvas):
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+
+        self.fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = self.fig.add_subplot(111)
+        self.axes.set_axis_off()
+        self.axes.autoscale_view()
+
+        self.draw_done = True
+        self.max_frame = 0
+
+        self.list_point = []
+        self.list_annotation = []
+        self.scatter = self.axes.scatter([],[])
+        self.animation_animation = None
+
+        FigureCanvas.__init__(self, self.fig)
+        self.setParent(parent)
+
+        FigureCanvas.setSizePolicy(self,
+                                   QtWidgets.QSizePolicy.Expanding,
+                                   QtWidgets.QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry(self)
+
+
+    def init_coord_data(self, list_point):
+        self.list_point = list_point
+
+        for i in range(len(list_point)):
+            anno = self.axes.annotate(str(i + 1), list_point[i])
+            self.list_annotation.append(anno)
+
+        list_x, list_y = self.get_listx_listy(list_point)
+        self.scatter = self.axes.scatter(list_x, list_y)
+        self.draw()
+
+    def get_listx_listy(self, list_point):
+        list_x = []
+        list_y = []
+        for i in range(len(list_point)):
+            list_x.append(list_point[i][0])
+            list_y.append(list_point[i][1])
+        return list_x, list_y
+
+    def update_cluster(self, clusters_point):
+        self.clusters_point = clusters_point
+        list_x, list_y = self.get_listx_listy(self.list_point)
+
+        self.point_cluster = [0 for x in range(len(self.list_point))]
+        for cluster_number in range(len(clusters_point)):
+            for i in range(len(clusters_point[cluster_number])):
+                self.point_cluster[clusters_point[cluster_number][i]] = cluster_number
+
+        self.list_line = []
+        for cluster_number in range(len(clusters_point)):
+            line, = self.axes.plot([],[])
+            self.list_line.append(line)
+        self.scatter = self.axes.scatter(list_x, list_y, c=self.point_cluster)
+        self.axes.set_axis_off()
+        self.draw()
+
+    def animate_cluster(self, num, list_x, list_y):
+        self.scatter = self.axes.scatter(list_x, list_y, c=self.point_cluster)
+        return self.scatter,
+
+    def update_cluster_graph(self, clusters_best_tour):
+        try:
+            self.max_frame = 0
+            clusters_list_x = []
+            clusters_list_y = []
+            clusters_color = []
+            self.draw_done = False
+
+            print(clusters_best_tour)
+
+            for cluster_number in range(len(clusters_best_tour)):
+                # Get cluster color
+                c = self.scatter.to_rgba(cluster_number)
+                # Get number of max point
+                if len(clusters_best_tour[cluster_number]) > self.max_frame:
+                    self.max_frame = len(clusters_best_tour[cluster_number])
+                # Get best tour list
+                list_x = []
+                list_y = []
+                for i in range(len(clusters_best_tour[cluster_number])):
+                    # Color index
+                    x = self.list_point[self.clusters_point[cluster_number][clusters_best_tour[cluster_number][i]]][0]
+                    y = self.list_point[self.clusters_point[cluster_number][clusters_best_tour[cluster_number][i]]][1]
+                    list_x.append(x)
+                    list_y.append(y)
+
+                x = self.list_point[self.clusters_point[cluster_number][clusters_best_tour[cluster_number][0]]][0]
+                y = self.list_point[self.clusters_point[cluster_number][clusters_best_tour[cluster_number][0]]][1]
+                list_x.append(x)
+                list_y.append(y)
+
+                clusters_list_x.append(list_x)
+                clusters_list_y.append(list_y)
+                clusters_color.append(c)
+
+            self.max_frame += 2
+            max_point = self.max_frame
+            print("What the fuck {}".format(self.max_frame))
+            print("{} - {} - {}".format(clusters_list_x, clusters_list_y, clusters_color))
+
+            for num in range(max_point):
+                self.animate_cluster_graph(num, clusters_list_x, clusters_list_y, clusters_color)
+                self.draw()
+                time.sleep(0.2)
+
+
+        except:
+            traceback.print_exc()
+
+    def animate_cluster_graph(self, num, clusters_list_x, clusters_list_y, clusters_color):
+        for i in range(len(clusters_list_x)):
+            if (num <= len(clusters_list_x[i])):
+                self.list_line[i].set_data(clusters_list_x[i][:num], clusters_list_y[i][:num])
+                self.list_line[i].set_color(clusters_color[i])
+
+        if num == self.max_frame - 1:
+            self.draw_done = True
+
+    def clear_graph(self):
+        self.axes.clear()
+        self.axes.set_axis_off()
+        self.draw()
 
 
 class GraphCanvas(FigureCanvas):
@@ -16,10 +146,13 @@ class GraphCanvas(FigureCanvas):
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
         fig.tight_layout()
-        self.paths = {}
         self.points = []
         self.axes.set_axis_off()
         self.axes.autoscale_view()
+        self.tour_edges = []
+        self.G = nx.Graph()
+        self.pos = {}
+        self.pos_layout = {}
 
         FigureCanvas.__init__(self, fig)
         self.setParent(parent)
@@ -29,50 +162,51 @@ class GraphCanvas(FigureCanvas):
         FigureCanvas.updateGeometry(self)
 
     def init_coord_data(self, points):
-        prevPoint = points[0]
-        for i in range(len(points)):
-            self.add_coord(points[i])
-            if i > 0:
-                self.draw_path(prevPoint, points[i])
-            prevPoint = points[i]
-        if len(points) > 2:
-            self.draw_line(points[-1], points[0])
+        for point in points:
+            self.add_coord(point)
+
+        self.draw_graph()
+
+    def draw_graph(self):
+        # Draw to network
+        nx.draw_networkx_nodes(self.G, pos=self.pos_layout, node_size=20, node_color="red", ax=self.axes)
+        nx.draw_networkx_edges(self.G, pos=self.pos_layout, alpha=0.1, ax=self.axes)
+        # Draw to screen
+        self.draw()
+
+    def clear_graph_tour(self):
+        self.axes.clear()
+        self.axes.set_axis_off()
         self.draw()
 
     def add_coord(self, point):
-        self.axes.plot([point[0]], [point[1]], "ro")
-        self.points.append(point)
+        #Add point
+        self.points.append((point[0], point[1]))
+        self.G.add_node(str(len(self.points) - 1), pos=(point[0], point[1]))
+
+        #Update position
+        self.pos[str(len(self.points) - 1)] = (point[0], point[1])
+        self.pos_layout = nx.spring_layout(G=self.G, pos=self.pos)
+
+        #Add edge
+        for i in range(len(self.points) - 1):
+            self.G.add_edge(str(i), str(len(self.points) - 1))
+
+    def draw_tour(self, tour):
+        self.tour_edges = []
+        # Add tour edge
+        for i in range(len(tour) - 1):
+            self.tour_edges.append((str(tour[i]), str(tour[i + 1])))
+        self.tour_edges.append((str(tour[-1]), str(tour[0])))
+
+        #Draw background graph
+        nx.draw_networkx_nodes(self.G, pos=self.pos_layout, node_size=20, node_color="red", ax=self.axes)
+        nx.draw_networkx_edges(self.G, pos=self.pos_layout, alpha=0.1, ax=self.axes)
+
+        #Draw graph tour
+        nx.draw_networkx_edges(self.G, pos=self.pos_layout, edgelist=self.tour_edges, alpha=1,
+                               edge_color='blue', ax=self.axes)
         self.draw()
-
-    def clear_graph(self):
-        self.axes.clear()
-        self.draw()
-
-    def clear_all_line(self):
-        for path in self.paths.values():
-            path.remove()
-        self.draw()
-
-    def draw_path_by_tour(self, tour):
-        for i in range(len(tour)):
-            p1 = self.points[tour[i]]
-            p2 = self.points[tour[0]]
-            if i < (len(tour) - 1):
-                p2 = self.points[tour[i+1]]
-            self.draw_path(p1, p2)
-
-    def draw_path(self, p1, p2):
-        path, = self.axes.plot([p1[0], p2[0]], [p1[1], p2[1]], "b-")
-        self.paths[(p1, p2)] = path
-        self.draw()
-
-    def change_path_apperance(self, p1, p2, alpha=None, color=None):
-        if alpha != None:
-            self.paths[(p1, p2)].set_alpha(alpha)
-        if color != None:
-            self.paths[(p1, p2)].set_color(color)
-        self.draw()
-
 
 class LengthChartCanvas(FigureCanvas):
     def __init__(self, parent=None, width=5, height=4, dpi=100):
@@ -109,3 +243,71 @@ class LengthChartCanvas(FigureCanvas):
     def clear_graph(self):
         self.lines.clear()
         self.axes.clear()
+
+class MultiLengthChartCanvas(FigureCanvas):
+    def __init__(self, parent=None, number_of_chart=1, width=5, height=4, dpi=100, list_chart_name=[]):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.number_of_chart = number_of_chart
+        self.list_axes = []
+
+        for i in range(number_of_chart):
+            axes = fig.add_subplot(1 , number_of_chart, i + 1)
+            axes.autoscale()
+            self.list_axes.append(axes)
+
+        for i in range(len(list_chart_name)):
+            self.list_axes[i].set_title(list_chart_name[i])
+
+        self.axes_lines = [[] for i in range(number_of_chart)]
+
+        FigureCanvas.__init__(self, fig)
+        self.setParent(parent)
+        FigureCanvas.setSizePolicy(self,
+                                   QtWidgets.QSizePolicy.Expanding,
+                                   QtWidgets.QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry(self)
+
+    def add_new_line(self, chart_index ,xdata, ydata):
+        # Add new line
+        aline, = self.list_axes[chart_index].plot(xdata, ydata)
+        self.axes_lines[chart_index].append(aline)
+        self.draw()
+        return aline
+
+    def clear_graph(self):
+        for i in range(self.number_of_chart):
+            self.list_axes[i].clear()
+            self.axes_lines[i].clear()
+
+class ColumnChartCanvas(FigureCanvas):
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+        self.axes.autoscale_view()
+        self.bar_width = 0.2
+
+        FigureCanvas.__init__(self, fig)
+        self.setParent(parent)
+
+        FigureCanvas.setSizePolicy(self,
+                                   QtWidgets.QSizePolicy.Expanding,
+                                   QtWidgets.QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry(self)
+
+    def create_bar(self, number_of_dataset, data_of_algorithms, name_of_algorithms):
+        #X axis
+        x_label = []
+        for i in range(number_of_dataset):
+            x_label.append("Dataset {}".format((i+1)))
+
+        number_of_dataset = np.arange(number_of_dataset)
+
+        for i in range(len(data_of_algorithms)):
+            self.axes.bar(number_of_dataset + self.bar_width * i, data_of_algorithms[i], width= self.bar_width, align='center', label=name_of_algorithms[i])
+
+        self.axes.set_xlabel("Algorithm")
+        self.axes.set_ylabel("Length")
+        self.axes.set_xticks(number_of_dataset + (self.bar_width/2) * (len(name_of_algorithms) - 1))
+        self.axes.set_xticklabels(x_label)
+        self.axes.legend()
+        self.draw()

@@ -8,7 +8,7 @@ import numpy as np
 
 
 class AntQ(QThread):
-    def __init__(self, number_of_ants, num_of_iteration, graph, alpha=.1, gamma=.3, delta=1, beta=2, w=10, global_best=True, result=None):
+    def __init__(self, number_of_ants, num_of_iteration, graph, alpha=.1, gamma=.3, delta=1, beta=2, w=10, global_best=False, result=None):
         QThread.__init__(self)
         self.number_of_ants = number_of_ants
         self.alpha = alpha
@@ -40,7 +40,10 @@ class AntQ(QThread):
             else:
                 s = self.best_tour[0]
             p_sum += self.graph.distance(r, s)
-        return self.w / p_sum
+        if p_sum != 0:
+            return self.w / p_sum
+        else:
+            return 0
 
     def delay_ant_q(self, tour):
         for i, node in enumerate(tour):
@@ -55,7 +58,7 @@ class AntQ(QThread):
     def create_ants(self):
         self.ants = []
         nodes = list(range(0, self.graph.num_node))
-        starting_nodes = np.random.choice(nodes, self.number_of_ants, replace=False)
+        starting_nodes = np.random.choice(nodes, self.number_of_ants)
         for i in range(0, self.number_of_ants):
             ant = Ant(i, self, starting_nodes[i])
             self.ants.append(ant)

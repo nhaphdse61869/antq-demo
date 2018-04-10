@@ -1,149 +1,172 @@
 from antq.antQ import AntQ
 from antq.antQGraph import AntQGraph
+from PyQt5.QtCore import QThread, pyqtSignal
 from cluster.kmeans import KMean
+import math
 import random as rand
+import sys
 
+class AntQClustering(QThread):
+    run_finished = pyqtSignal()
 
-class AntQClustering:
-    def __init__(self, points, dist_matrix, k):
-        self.points = points
+    def __init__(self, list_point, dist_matrix, k, number_of_agent,
+                 number_of_iteration, learning_rate=.1, discount_factor=.3,
+                 delta=1, beta=2, global_best=False, result_queue=None):
+        QThread.__init__(self)
+        #Algorithm input
+        self.list_point = list_point
         self.dist_matrix = dist_matrix
+
+        #Algorithm parameter
         self.k = k
-        self.best_tour = []
+        self.number_of_agent = number_of_agent
+        self.number_of_iteration = number_of_iteration
+        self.LR = learning_rate
+        self.DF = discount_factor
+        self.delta = delta
+        self.beta = beta
+        self.global_best = global_best
+
+        #Cluster Information
+        self.clusters_point = []
+        self.clusters_dist_matrix = []
+        self.clusters_antq = []
+
+        #Result Output
+        self.clusters_best_tour = [[] for x in range(self.k)]
+        self.clusters_best_len = [0 for x in range(self.k)]
+
+        #Statistic Output
+        self.best_len = 0
+        self.list_clusters_best_tour = []
+        self.list_clusters_best_len = []
+        self.list_avg_best_length = []
+        self.list_avg_mean_length = []
+        self.list_avg_var = []
+        self.list_avg_dev = []
+
+        #Draw chart queue
+        self.result_queue = result_queue
+
+        # Divide graph into clusters and init cluster information
+        self.init_clusters()
+
+    def init_clusters(self):
+        #Divide graph into k cluster
+        kmean = KMean(points=self.list_point, dist_matrix=self.dist_matrix, k=self.k)
+        kmean.run()
+
+        #For each cluster
+        for i in range(self.k):
+            #Get points and distance matrix of cluster
+            cluster_point, cluster_dist_matrix = self.get_cluster_points_and_dist_matrix(kmean, i)
+            self.clusters_point.append(cluster_point)
+            self.clusters_dist_matrix.append(cluster_dist_matrix)
+
+            #Create AntQ for cluster
+            algGraphEx = AntQGraph(cluster_dist_matrix)
+            antq = AntQ(self.number_of_agent, self.number_of_iteration, algGraphEx,
+                        self.LR, self.DF, self.delta, self.beta)
+            self.clusters_antq.append(antq)
+
+
+    def get_cluster_points_and_dist_matrix(self, kmean, cluster_index):
+        cluster_point = []
+        # Get all point in cluster_index
+        for i in range(len(self.dist_matrix)):
+            if kmean.clusters[i] == cluster_index:
+                cluster_point.append(i)
+
+        cluster_dist_matrix = [[0 for x in range(len(cluster_point))] for y in range(len(cluster_point))]
+        # Get distance matrix of cluster_index
+        for i in range(len(cluster_point)):
+            for j in range(len(cluster_point)):
+                cluster_dist_matrix[i][j] = self.dist_matrix[cluster_point[i]][cluster_point[j]]
+
+        return cluster_point, cluster_dist_matrix
+
+    def cluster_antq_iter_run(self, cluster_index, iter_num):
+        iter_avg, iter_variance, iter_best_tour = self.clusters_antq[cluster_index].iter_run(iter_num)
+
+        if self.global_best:
+            iter_best_tour = self.clusters_antq[cluster_index].best_tour
+
+        self.clusters_antq[cluster_index].delay_ant_q(iter_best_tour)
+
+        return iter_best_tour,\
+               self.clusters_antq[cluster_index].best_tour_len,\
+               iter_avg, iter_variance
+
+    def cluster_best_tour_to_graph_best_tour(self, cluster_index):
+        graph_best_tour = []
+        for i in range(len(self.clusters_best_tour[cluster_index])):
+            cluster_point_index = self.clusters_best_tour[cluster_index][i]
+            graph_best_tour.append(self.clusters_point[cluster_index][cluster_point_index])
+        return graph_best_tour
+
+    def iteration_run(self, iter_num):
+        iter_avg_best_length = 0
+        iter_avg_variance = 0
+        iter_avg_mean_length = 0
+        iter_avg_deviation = 0
+
+        for i in range(self.k):
+            #Run all cluster antq
+            self.clusters_best_tour[i], self.clusters_best_len[i],\
+            iter_avg, iter_variance = self.cluster_antq_iter_run(i, iter_num)
+
+            #Calculate total statistic variable
+            iter_avg_best_length += self.clusters_best_len[i]
+            iter_avg_variance += iter_variance
+            iter_avg_mean_length += iter_avg
+
+        iter_avg_best_length = iter_avg_best_length/self.k
+        iter_avg_variance = iter_avg_variance/self.k
+        iter_avg_mean_length = iter_avg_mean_length/self.k
+
+        return iter_avg_best_length, iter_avg_variance, iter_avg_mean_length
+
 
     def run(self):
-        #clustering all point by using k-means algorithms
-        kmean = KMean(points=self.points, dist_matrix=self.dist_matrix, k=self.k)
-        kmean.run()
-        clusters_point = []
-        clusters_best_tour = []
+        try:
+            prev_iter_best_tour = []
+            prev_iter_best_len = sys.maxsize
+            # Run each iteration
+            for i in range(0, self.number_of_iteration):
+                print("Iteration {}".format(i))
+                iter_best_length, iter_variance, iter_avg = self.iteration_run(i)
 
-        # use antq for each cluster
-        for i in range(self.k):
-            #convert get all point index in cluster i
-            cluster_point = []
-            for j in range(len(self.dist_matrix)):
-                if kmean.clusters[j] == i:
-                    cluster_point.append(j)
+                iter_deviation = math.sqrt(iter_variance)
 
-            # convert distance matrix to cluster distance matrix
-            cluster_dist_matrix = [[0 for x in range(len(self.cluster_point))] for y in range(len(self.cluster_point))]
-            for z in range(len(cluster_point)):
-                for w in range(len(cluster_point)):
-                    cluster_dist_matrix[z][w] = self.dist_matrix[cluster_point[z]][cluster_point[w]]
-
-            #use antq algorithm
-
-            #save best tour and cluster points
-            best_tour = []
-            clusters_best_tour.append(best_tour)
-            clusters_point.append(cluster_point)
-
-        #merge all cluster
-        #use ant q to find best tour for all center points
-        center_best_tour = []
-
-        #random start cluster
-        start_cluster = rand.randint(0, len(kmean.centers))
-
-
-        #find next cluster
-        next_cluster = 0
-        new_best_center_tour = []
-
-        for i in range(len(center_best_tour)):
-            if center_best_tour[i] == start_cluster:
-                if i < (len(center_best_tour) -1):
-                    next_cluster = center_best_tour[i + 1]
+                # Do not show larger graph
+                if prev_iter_best_len > iter_best_length:
+                    prev_iter_best_len = iter_best_length
+                    prev_iter_best_tour = self.clusters_best_tour
                 else:
-                    next_cluster = center_best_tour[0]
-                new_best_center_tour.extend(center_best_tour[:i])
-                new_best_center_tour.extend(center_best_tour[(i + 2):])
+                    iter_best_length = prev_iter_best_len
+                    self.clusters_best_tour = prev_iter_best_tour
 
+                    self.best_len = iter_best_length
 
-        #find minimum edge between 2 cluster
-        min_dist = self.dist_matrix[kmean.centers[start_cluster]][kmean.centers[next_cluster]]
-        q = 0
-        r = 0
-        for i in range(len(clusters_point[start_cluster])):
-            for j in range(len(clusters_point[next_cluster])):
-                distance = self.dist_matrix[clusters_point[start_cluster][i]][clusters_point[next_cluster][j]]
-                if distance < min_dist:
-                    q = i
-                    r = j
-                    min_dist = distance
+                #Add result to queue
+                aIter_result = {}
+                aIter_result["iteration"] = i
+                aIter_result["best_tour_len"] = iter_best_length
+                aIter_result["best_tour"] = self.clusters_best_tour
+                aIter_result["iter_avg"] = iter_avg
+                aIter_result["iter_variance"] = iter_variance
+                aIter_result["iter_deviation"] = iter_deviation
+                self.result_queue.put(aIter_result)
 
-        #select start point in start cluster
-        new_best_cluster_tour = []
-        start_cluster_point_index = 0
-        for i in range(len(clusters_best_tour[start_cluster])):
-            if clusters_best_tour[start_cluster][i] == q:
-                if i == len(clusters_best_tour[start_cluster]) - 1:
-                    start_cluster_point_index = 0
-                else:
-                    start_cluster_point_index = i + 1
+                #Save iteration result
+                self.list_clusters_best_tour.append(self.clusters_best_tour)
+                self.list_clusters_best_len.append(iter_best_length)
+                self.list_avg_best_length.append(iter_best_length)
+                self.list_avg_mean_length.append(iter_avg)
+                self.list_avg_var.append(iter_variance)
+                self.list_avg_dev.append(iter_deviation)
 
-        #reorder base on start point
-        new_best_cluster_tour.extend(clusters_best_tour[start_cluster][start_cluster_point_index:])
-        new_best_cluster_tour.extend(clusters_best_tour[start_cluster][:start_cluster_point_index])
-
-        #add start cluster point to best tour
-        self.best_tour.append(clusters_point[start_cluster][start_cluster_point_index])
-
-        #add start cluster tour to best tour
-        for i in range(len(new_best_cluster_tour)):
-            self.best_tour.append(clusters_point[start_cluster][new_best_cluster_tour[i]])
-
-        #add start point of next cluster
-        self.best_tour.append(clusters_point[next_cluster][r])
-
-        #add next cluster tour to best tour
-        new_best_cluster_tour = []
-        for i in range(len(clusters_best_tour[next_cluster])):
-            if (clusters_best_tour[next_cluster][i]) == r:
-                if i == 0:
-                    new_best_cluster_tour.extend(clusters_best_tour[next_cluster])
-                else:
-                    new_best_cluster_tour.extend(clusters_best_tour[next_cluster][i:])
-                    new_best_cluster_tour.extend(clusters_best_tour[next_cluster][:i])
-
-        for i in range(len(new_best_cluster_tour)):
-            self.best_tour.append(clusters_point[next_cluster][new_best_cluster_tour[i]])
-
-        #add other cluster tour
-
-        #new cluster best tour
-        prev_cluster = next_cluster
-        prev_cluster_last_point = clusters_best_tour[next_cluster][-1]
-        for i in range(len(new_best_center_tour)):
-            next_cluster = new_best_center_tour[i]
-            next_cluster_first_point = clusters_best_tour[next_cluster][0]
-            min_dist = self.dist_matrix[clusters_point[prev_cluster][prev_cluster_last_point]][clusters_point[next_cluster][next_cluster_first_point]]
-            first_point = 0
-            #find min edge from prev cluster to next cluster
-            for j in range(1, len(clusters_best_tour[next_cluster])):
-                next_cluster_temp_point = clusters_best_tour[next_cluster][j]
-                dist = self.dist_matrix[clusters_point[prev_cluster][prev_cluster_last_point]][
-                    clusters_point[next_cluster][next_cluster_temp_point]]
-                if dist < min_dist:
-                    first_point = j
-                    min_dist = dist
-
-            #create new best tour of next cluster
-            new_best_cluster_tour = []
-            new_best_cluster_tour.extend(clusters_best_tour[next_cluster][first_point:])
-            new_best_cluster_tour.extend(clusters_best_tour[next_cluster][:first_point])
-            clusters_best_tour[next_cluster] = new_best_cluster_tour
-
-            #assign tour to best tour
-            for i in range(len(new_best_cluster_tour)):
-                self.best_tour.append(clusters_point[next_cluster][new_best_cluster_tour[i]])
-
-            prev_cluster = next_cluster
-            prev_cluster_last_point = clusters_best_tour[next_cluster][-1]
-
-
-
-
-
-
+            self.run_finished.emit()
+        except:
+            (type, value, traceback) = sys.exc_info()
+            sys.excepthook(type, value, traceback)

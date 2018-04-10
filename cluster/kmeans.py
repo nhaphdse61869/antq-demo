@@ -66,8 +66,8 @@ class KMean:
                 number_point += 1
                 #check if it is in cluster
                 if self.clusters[i] == cluster_index:
-                    center_x += self.points[i]['latitude']
-                    center_y += self.points[i]['longitude']
+                    center_x += self.points[i][0]
+                    center_y += self.points[i][1]
             #compute center x, y
             center_x = center_x/number_point
             center_y = center_y/number_point
@@ -76,7 +76,7 @@ class KMean:
             min_center = self.centers[cluster_index]
             for i in range(len(self.dist_matrix)):
                 if self.clusters[i] == cluster_index:
-                    dist = self.compute_distance(center_x, center_y, self.points[i]['latitude'], self.points[i]['longitude'])
+                    dist = self.compute_distance(center_x, center_y, self.points[i][0], self.points[i][1])
                     if min_dist < 0 or dist < min_dist:
                         min_dist = dist
                         min_center = i

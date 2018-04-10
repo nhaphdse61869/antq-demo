@@ -162,18 +162,19 @@ class QGoogleMap(QWebEngineView):
             latitude, longitude = self.geocode(location)
         except GeoCoder.NotFoundError:
             return None
-        return self.addMarker(location, latitude, longitude, **extra)
+        return self.addMarker(location, latitude, longitude, 0, **extra)
 
     @trace
-    def addMarker(self, key, latitude, longitude, **extra):
+    def addMarker(self, key, latitude, longitude, cluster_number, **extra):
         return self.runScript(
             "gmap_addMarker("
             "key={!r}, "
             "latitude={}, "
             "longitude={}, "
+            "cluster_number={}, "
             "{}"
             "); "
-                .format(key, latitude, longitude, json.dumps(extra)))
+                .format(key, latitude, longitude, cluster_number, json.dumps(extra)))
 
     @trace
     def moveMarker(self, key, latitude, longitude):
@@ -197,9 +198,17 @@ class QGoogleMap(QWebEngineView):
             "); ".format(key))
 
     @trace
-    def directss(self, listMarker,bestTour):
+    def clearAllMarker(self):
+        return self.runScript("deleteMarkers()")
+
+    @trace
+    def clearAllRoute(self):
+        return self.runScript("clearAllRoute()")
+
+    @trace
+    def directss(self, listMarker, bestTour, cluster_number):
         return self.runScript(
-            "displayAllRouteVer2({},{});".format(listMarker,bestTour))
+            "displayAllRout({},{}, {});".format(listMarker,bestTour, cluster_number))
 
     @QtCore.pyqtSlot(str, float, float)
     def markerMoved(self, key, lat, long):
@@ -237,7 +246,7 @@ class QGoogleMap(QWebEngineView):
         api_key = "AIzaSyCNHayAJYOTf-gi30fTgbA3SEXpjj3LDFM"
         gmaps = googlemaps.Client(key=api_key)
 
-        dis_mat = [[0 for x in range(len(listMarker))] for y in range(len(listMarker))]
+        dis_mat = [[1 for x in range(len(listMarker))] for y in range(len(listMarker))]
         for i in range(len(listMarker)):
             for j in range(len(listMarker)):
                 if i == j :
@@ -247,4 +256,5 @@ class QGoogleMap(QWebEngineView):
                                                      destinations=(listMarker[j]['latitude'],listMarker[j]['longitude']),
                                                      mode="driving")
                     dis_mat[i][j] = duration['rows'][0]['elements'][0]['duration']['value']
+                print(dis_mat)
         return dis_mat
