@@ -205,7 +205,7 @@ function sleep(ms) {
 
 async function displayAllRout(listCoords, bestTour, cluster_number) {
     var directionsService = new google.maps.DirectionsService;
-    for(var i = 0; i < listCoords.length-1; i++) {
+    for(var i = 0; i < bestTour.length-1; i++) {
         var currentCoord = new google.maps.LatLng(listCoords[bestTour[i]][0], listCoords[bestTour[i]][1]);
         var nextCoord = new google.maps.LatLng(listCoords[bestTour[i+1]][0], listCoords[bestTour[i+1]][1]);
         directionsService.route({

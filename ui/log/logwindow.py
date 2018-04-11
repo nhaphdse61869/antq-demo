@@ -1,70 +1,84 @@
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
-from UI.ResultFrame import *
-from UI.Table import *
-from util.logging import LogIO
-from figure.chart import *
+from ui.log.log_managepanel import *
+from ui.log.log_comparetable import *
+from util.log import LogIO
+from ui.figure import *
 import sys
 
-class UILog(QWidget):
+class LogWindow(QWidget):
 
     def __init__(self):
         super().__init__()
+        # Variable
         self.list_selected_log = []
-        containerLayout = QHBoxLayout()
-        leftConLayout = QVBoxLayout()
-        rightConLayout = QVBoxLayout()
-        leftConLayout.setSizeConstraint(QLayout.SetFixedSize)
-        #leftConLayout.re
-        containerLayout.addLayout(leftConLayout)
-        containerLayout.addLayout(rightConLayout)
-        #leftConLayout.setGeometry(QRect(0, 0, 0, 600))
-        topLeftConLayout = QHBoxLayout()
-        self.botLeftConlayout = QHBoxLayout()
-        self.chartContainer = QScrollArea()
-        leftConLayout.addLayout(topLeftConLayout)
-        leftConLayout.addLayout(self.botLeftConlayout)
-        self.logListTree = ResultFrame(self)
-        self.tableLog = TableLog(self, remove_log_function=self.remove_list_log)
-        self.tableLog.setMinimumSize(1000,300)
 
-        formContainer = QGroupBox()
-        formContainerLayout = QHBoxLayout()
-        addToTableBtn = QPushButton("Add to Table")
-        addToTableBtn.setStyleSheet("box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);")
-        compareBtn = QPushButton("Compare")
-        formContainerLayout.addWidget(addToTableBtn)
-        formContainerLayout.addWidget(compareBtn)
-        formContainer.setLayout(formContainerLayout)
+        # Main layout
+        main_layout = QHBoxLayout()
+        
+        # Sub layout
+        left_layout = QVBoxLayout()
+        right_layout = QVBoxLayout()
+        
+        # Left layout
+        left_layout.setSizeConstraint(QLayout.SetFixedSize)
 
-        rightConLayout.addWidget(self.logListTree)
-        rightConLayout.addWidget(formContainer)
-        topLeftConLayout.addWidget(self.tableLog)
-        self.botLeftConlayout.addWidget(self.chartContainer)
-        self.setLayout(containerLayout)
-        addToTableBtn.clicked.connect(self.selectLog)
-        compareBtn.clicked.connect(self.compareLogs)
+        left_top_layout = QHBoxLayout()
+        self.log_table = CompareLogTable(self, removeLogFunction=self.removeListLog)
+        self.log_table.setMinimumSize(1000, 300)
+        left_top_layout.addWidget(self.log_table)
 
-    def remove_list_log(self, index):
+        self.left_bottom_layout = QHBoxLayout()
+        self.chart_container = QScrollArea()
+        self.left_bottom_layout.addWidget(self.chart_container)
+
+        left_layout.addLayout(left_top_layout)
+        left_layout.addLayout(self.left_bottom_layout)
+
+        # Right layout
+        form_container = QGroupBox()
+        form_container_layout = QHBoxLayout()
+        self.add_to_table_button = QPushButton("Add to Table")
+        self.add_to_table_button.setStyleSheet("box-shadow: 0 12px 16px 0 rgba(0,0,0,0.24), 0 17px 50px 0 rgba(0,0,0,0.19);")
+        self.compare_button = QPushButton("Compare")
+        form_container_layout.addWidget(self.add_to_table_button)
+        form_container_layout.addWidget(self.compare_button)
+        form_container.setLayout(form_container_layout)
+
+        self.log_list_tree = LogPanel(self)
+
+        right_layout.addWidget(self.log_list_tree)
+        right_layout.addWidget(form_container)
+
+        # Connect widget to function
+        self.add_to_table_button.clicked.connect(self.addLogToTable)
+        self.compare_button.clicked.connect(self.compareSelectedLogs)
+
+        # Add to main layout
+        main_layout.addLayout(left_layout)
+        main_layout.addLayout(right_layout)
+        self.setLayout(main_layout)
+
+    def removeListLog(self, index):
         del self.list_selected_log[index]
 
-    def testCurrentPos(self):
-        qm = QMessageBox
-        qm.information(self, "", str(self.logListTree.currentKey))
-
-    def selectLog(self):
-        log_key = self.logListTree.currentKey
+    def addLogToTable(self):
+        log_key = self.log_list_tree.currentKey
         duplicated = False
         for i in range(len(self.list_selected_log)):
             if self.list_selected_log[i].key == int(log_key):
                 duplicated = True
         if duplicated == False:
             log_io = LogIO()
-            select_log = log_io.get_log(int(log_key))
-            self.tableLog.addTableItem(select_log)
+            select_log = log_io.getLog(int(log_key))
+            self.log_table.addLogToTable(select_log)
             self.list_selected_log.append(select_log)
 
-    def compareLogs(self):
+    def compareSelectedLogs(self):
+        #Check if there aren't selected logs
+        if len(self.list_selected_log) == 0:
+            error = QMessageBox()
+            error.critical(self,"Error", "Please add log to table first", QMessageBox.Ok)
+            return
+
         #Check number of cluster
         is_same_number_cluster = True
         for i in range(len(self.list_selected_log) - 1):
@@ -74,11 +88,12 @@ class UILog(QWidget):
 
         if is_same_number_cluster == False:
             error = QMessageBox()
-            error.critical(self, "Not same number cluster", "Error", QMessageBox.Ok)
+            error.critical(self, "Error", "Not same number cluster", QMessageBox.Ok)
+            return
 
         #Clear compare chart
-        for i in reversed(range(self.botLeftConlayout.count())):
-            self.botLeftConlayout.itemAt(i).widget().setParent(None)
+        for i in reversed(range(self.left_bottom_layout.count())):
+            self.left_bottom_layout.itemAt(i).widget().setParent(None)
 
         #Check if it is same algorithm
         is_same_algorithm = True
@@ -88,24 +103,29 @@ class UILog(QWidget):
                     is_same_algorithm = False
 
         if is_same_algorithm:
-
+            #Show legend
             algorithm = self.list_selected_log[0].algorithm
             if algorithm == "AntQ" or algorithm == "ACO":
-                self.compareChart = MultiLengthChartCanvas(number_of_chart=3, list_chart_name=["Best Length", "Average Length", "Deviation"])
+                self.compare_chart = MultiLineChart(number_of_chart=3, list_chart_name=["Best Length", "Average Length", "Standard Deviation"])
                 for i in range(len(self.list_selected_log)):
                     list_iteration = self.list_selected_log[i].result["list_iteration"]
                     list_best_len = self.list_selected_log[i].result["list_best_len"]
                     list_avg = self.list_selected_log[i].result["list_avg"]
                     list_deviation = self.list_selected_log[i].result["list_deviation"]
-                    self.compareChart.add_new_line(0, list_iteration, list_best_len)
-                    self.compareChart.add_new_line(1, list_iteration, list_avg)
-                    self.compareChart.add_new_line(2, list_iteration, list_deviation)
+                    self.compare_chart.addNewLine(0, list_iteration, list_best_len)
+                    self.compare_chart.addNewLine(1, list_iteration, list_avg)
+                    self.compare_chart.addNewLine(2, list_iteration, list_deviation)
             elif algorithm == "Simulated Annealing":
-                self.compareChart = MultiLengthChartCanvas(number_of_chart=1)
+                self.compare_chart = MultiLineChart(number_of_chart=1)
                 for i in range(len(self.list_selected_log)):
                     list_iteration = self.list_selected_log[i].result["list_iteration"]
                     list_best_len = self.list_selected_log[i].result["list_best_len"]
-                    self.compareChart.add_new_line(0, list_iteration, list_best_len)
+                    self.compare_chart.addNewLine(0, list_iteration, list_best_len)
+            #Show legend
+            list_legend = []
+            for i in range(len(self.list_selected_log)):
+                list_legend.append(self.list_selected_log[i].key)
+            self.compare_chart.setLegend(list_legend)
         else:
             try:
                 number_of_dataset = 1
@@ -183,18 +203,16 @@ class UILog(QWidget):
                     data_of_algorithm[logs_algorithm_index[i]][logs_dataset[i]] = self.list_selected_log[i].result["best_length"]
 
                 # Draw graph
-                self.compareChart = ColumnChartCanvas()
-                self.compareChart.create_bar(number_of_dataset, data_of_algorithm, log_algorithms)
+                self.compare_chart = ColumnChart()
+                self.compare_chart.createColumn(number_of_dataset, data_of_algorithm, log_algorithms)
                 pass
             except:
                 (type, value, traceback) = sys.exc_info()
                 sys.excepthook(type, value, traceback)
                 pass
 
-
         #Add chart to container
-        self.botLeftConlayout.addWidget(self.compareChart)
-        #self.botLeftConlayout.addWidget(self.chartContainer)
+        self.left_bottom_layout.addWidget(self.compare_chart)
 
 
 

@@ -1,9 +1,10 @@
-from antq.antQ import AntQ
-from antq.antQGraph import AntQGraph
+from algorithm.ant_q import AntQ
+from algorithm.ant_q import AntQGraph
+from algorithm.kmeans import KMean
+
 from PyQt5.QtCore import QThread, pyqtSignal
-from cluster.kmeans import KMean
+
 import math
-import random as rand
 import sys
 
 class AntQClustering(QThread):
@@ -49,9 +50,9 @@ class AntQClustering(QThread):
         self.result_queue = result_queue
 
         # Divide graph into clusters and init cluster information
-        self.init_clusters()
+        self.initClusters()
 
-    def init_clusters(self):
+    def initClusters(self):
         #Divide graph into k cluster
         kmean = KMean(points=self.list_point, dist_matrix=self.dist_matrix, k=self.k)
         kmean.run()
@@ -59,7 +60,7 @@ class AntQClustering(QThread):
         #For each cluster
         for i in range(self.k):
             #Get points and distance matrix of cluster
-            cluster_point, cluster_dist_matrix = self.get_cluster_points_and_dist_matrix(kmean, i)
+            cluster_point, cluster_dist_matrix = self._getClusterPointsAndDistMatrix(kmean, i)
             self.clusters_point.append(cluster_point)
             self.clusters_dist_matrix.append(cluster_dist_matrix)
 
@@ -69,8 +70,7 @@ class AntQClustering(QThread):
                         self.LR, self.DF, self.delta, self.beta)
             self.clusters_antq.append(antq)
 
-
-    def get_cluster_points_and_dist_matrix(self, kmean, cluster_index):
+    def _getClusterPointsAndDistMatrix(self, kmean, cluster_index):
         cluster_point = []
         # Get all point in cluster_index
         for i in range(len(self.dist_matrix)):
@@ -85,26 +85,26 @@ class AntQClustering(QThread):
 
         return cluster_point, cluster_dist_matrix
 
-    def cluster_antq_iter_run(self, cluster_index, iter_num):
-        iter_avg, iter_variance, iter_best_tour = self.clusters_antq[cluster_index].iter_run(iter_num)
+    def runIterClusterAntq(self, cluster_index, iter_num):
+        iter_avg, iter_variance, iter_best_tour = self.clusters_antq[cluster_index].runIter(iter_num)
 
         if self.global_best:
             iter_best_tour = self.clusters_antq[cluster_index].best_tour
 
-        self.clusters_antq[cluster_index].delay_ant_q(iter_best_tour)
+        self.clusters_antq[cluster_index].updateDelayAntQ(iter_best_tour)
 
         return iter_best_tour,\
                self.clusters_antq[cluster_index].best_tour_len,\
                iter_avg, iter_variance
 
-    def cluster_best_tour_to_graph_best_tour(self, cluster_index):
+    def getGraphBestTour(self, cluster_index):
         graph_best_tour = []
         for i in range(len(self.clusters_best_tour[cluster_index])):
             cluster_point_index = self.clusters_best_tour[cluster_index][i]
             graph_best_tour.append(self.clusters_point[cluster_index][cluster_point_index])
         return graph_best_tour
 
-    def iteration_run(self, iter_num):
+    def runIter(self, iter_num):
         iter_avg_best_length = 0
         iter_avg_variance = 0
         iter_avg_mean_length = 0
@@ -113,7 +113,7 @@ class AntQClustering(QThread):
         for i in range(self.k):
             #Run all cluster antq
             self.clusters_best_tour[i], self.clusters_best_len[i],\
-            iter_avg, iter_variance = self.cluster_antq_iter_run(i, iter_num)
+            iter_avg, iter_variance = self.runIterClusterAntq(i, iter_num)
 
             #Calculate total statistic variable
             iter_avg_best_length += self.clusters_best_len[i]
@@ -126,7 +126,6 @@ class AntQClustering(QThread):
 
         return iter_avg_best_length, iter_avg_variance, iter_avg_mean_length
 
-
     def run(self):
         try:
             prev_iter_best_tour = []
@@ -134,7 +133,7 @@ class AntQClustering(QThread):
             # Run each iteration
             for i in range(0, self.number_of_iteration):
                 print("Iteration {}".format(i))
-                iter_best_length, iter_variance, iter_avg = self.iteration_run(i)
+                iter_best_length, iter_variance, iter_avg = self.runIter(i)
 
                 iter_deviation = math.sqrt(iter_variance)
 
@@ -145,6 +144,7 @@ class AntQClustering(QThread):
                 else:
                     iter_best_length = prev_iter_best_len
                     self.clusters_best_tour = prev_iter_best_tour
+
 
                     self.best_len = iter_best_length
 

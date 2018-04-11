@@ -1,6 +1,6 @@
 import math
 import random
-from util.tsp import TSPFileReader
+from util.dataset import TSPFileReader
 from PyQt5.QtCore import QThread, pyqtSignal
 
 class SimAnneal(QThread):
@@ -27,7 +27,7 @@ class SimAnneal(QThread):
         self.list_dev = []
         self.list_iter = []
 
-        self.cur_solution = self.initial_solution()
+        self.cur_solution = self.initSolution()
         self.best_tour = list(self.cur_solution)
 
         self.cur_fitness = self.fitness(self.cur_solution)
@@ -37,7 +37,7 @@ class SimAnneal(QThread):
         self.fitness_list = [self.cur_fitness]
 
 
-    def initial_solution(self):
+    def initSolution(self):
         """
         Greedy algorithm to get an initial solution (closest-neighbour)
         """
@@ -65,7 +65,7 @@ class SimAnneal(QThread):
         return sum([self.dist_matrix[sol[i - 1]][sol[i]] for i in range(1, self.N)]) \
                + self.dist_matrix[sol[0]][sol[self.N - 1]]
 
-    def p_accept(self, candidate_fitness):
+    def computeAcceptP(self, candidate_fitness):
         """
         Probability of accepting if the candidate is worse than current
         Depends on the current temperature and difference between candidate and current
@@ -85,7 +85,7 @@ class SimAnneal(QThread):
                 self.best_tour_len = candidate_fitness
                 self.best_tour = candidate
         else:
-            if random.random() < self.p_accept(candidate_fitness):
+            if random.random() < self.computeAcceptP(candidate_fitness):
                 self.cur_fitness = candidate_fitness
                 self.cur_solution = candidate
 

@@ -3,7 +3,7 @@ import sys
 import math
 from PyQt5.QtCore import QThread, pyqtSignal
 
-class Graph(object):
+class ACOGraph(object):
     def __init__(self, dist_matrix, mat_size):
         """
         :param cost_matrix:
@@ -46,7 +46,7 @@ class ACO(QThread):
         self.list_var = []
         self.list_dev = []
 
-    def _update_pheromone(self, graph: Graph, ants: list):
+    def _updatePheromone(self, graph: ACOGraph, ants: list):
         for i, row in enumerate(graph.pheromone):
             for j, col in enumerate(row):
                 graph.pheromone[i][j] *= self.rho
@@ -54,7 +54,7 @@ class ACO(QThread):
                     graph.pheromone[i][j] += ant.pheromone_delta[i][j]
 
     # noinspection PyProtectedMember
-    def iter_run(self):
+    def iterRun(self):
         total_cost = 0
         avg_cost = 0
         best_cost = float('inf')
@@ -62,25 +62,25 @@ class ACO(QThread):
         ants = [_Ant(self, self.graph) for i in range(self.ant_count)]
         for ant in ants:
             for i in range(self.graph.mat_size - 1):
-                ant._select_next()
+                ant._selectNext()
             ant.total_cost += self.graph.matrix[ant.tabu[-1]][ant.tabu[0]]
             total_cost += ant.total_cost
             if ant.total_cost < best_cost:
                 best_cost = ant.total_cost
                 best_solution = [] + ant.tabu
             # update pheromone
-            ant._update_pheromone_delta()
+            ant._updatePheromoneDelta()
         avg_cost = total_cost / self.ant_count
         variance = 0
         for ant in ants:
             variance += ((ant.total_cost -avg_cost)**2 / (self.ant_count - 1))
         deviation = math.sqrt(variance)
-        self._update_pheromone(self.graph, ants)
+        self._updatePheromone(self.graph, ants)
         return best_solution, best_cost, avg_cost, variance, deviation
 
     def run(self):
         for gen in range(self.generations):
-            iter_best_tour, iter_best_len, iter_avg, iter_variance, iter_deviation = self.iter_run()
+            iter_best_tour, iter_best_len, iter_avg, iter_variance, iter_deviation = self.iterRun()
             self.best_tour_len = iter_best_len
             self.best_tour = iter_best_tour
             aIter_result = {}
@@ -100,7 +100,7 @@ class ACO(QThread):
 
 
 class _Ant(object):
-    def __init__(self, aco: ACO, graph: Graph):
+    def __init__(self, aco: ACO, graph: ACOGraph):
         self.colony = aco
         self.graph = graph
         self.total_cost = 0.0
@@ -114,7 +114,7 @@ class _Ant(object):
         self.current = start
         self.allowed.remove(start)
 
-    def _select_next(self):
+    def _selectNext(self):
         denominator = 0
         for i in self.allowed:
             denominator += self.graph.pheromone[self.current][i] ** self.colony.alpha * self.eta[self.current][
@@ -142,7 +142,7 @@ class _Ant(object):
         self.current = selected
 
     # noinspection PyUnusedLocal
-    def _update_pheromone_delta(self):
+    def _updatePheromoneDelta(self):
         self.pheromone_delta = [[0 for j in range(self.graph.mat_size)] for i in range(self.graph.mat_size)]
         for _ in range(1, len(self.tabu)):
             i = self.tabu[_ - 1]

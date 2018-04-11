@@ -5,13 +5,14 @@ import numpy
 log_filename = "logging.json"
 dataset_filename = "dataset.json"
 result_filename = "result.json"
+
 class LogIO:
     def __init__(self):
         self.log_filename = log_filename
         self.dataset_filename = dataset_filename
         self.result_filename = result_filename
 
-    def get_list_log(self, load_dataset=False, load_result=False):
+    def getListLog(self, load_dataset=False, load_result=False):
         list_log = []
 
         #Open log file
@@ -29,12 +30,12 @@ class LogIO:
         #Load dataset and result
         for i in range(len(list_log)):
             if load_dataset:
-                list_log[i].dataset = self.get_dataset_by_log_key(list_log[i].key)
+                list_log[i].dataset = self.getDatasetByLogKey(list_log[i].key)
             if load_result:
-                list_log[i].result = self.get_result_by_log_key(list_log[i].key)
+                list_log[i].result = self.getResultByLogKey(list_log[i].key)
         return list_log
 
-    def get_log(self, log_key):
+    def getLog(self, log_key):
         log_object = None
         f = open(self.log_filename, "r+")
         lines = f.readlines()
@@ -47,11 +48,11 @@ class LogIO:
         f.close()
 
         #Get dataset and result
-        log_object.dataset = self.get_dataset_by_log_key(log_object.key)
-        log_object.result = self.get_result_by_log_key(log_object.key)
+        log_object.dataset = self.getDatasetByLogKey(log_object.key)
+        log_object.result = self.getResultByLogKey(log_object.key)
         return log_object
 
-    def get_dataset_by_log_key(self, log_key):
+    def getDatasetByLogKey(self, log_key):
         dataset = []
         # Open dataset file
         f = open(self.dataset_filename, "r+")
@@ -65,7 +66,7 @@ class LogIO:
         f.close()
         return dataset
 
-    def get_result_by_log_key(self, log_key):
+    def getResultByLogKey(self, log_key):
         result = []
         # Open result file
         f = open(self.result_filename, "r+")
@@ -79,7 +80,7 @@ class LogIO:
         f.close()
         return result
 
-    def get_new_log_key(self):
+    def getNewLogKey(self):
         key = 0
         # Open log file
         f = open(self.log_filename, "r+")
@@ -93,8 +94,8 @@ class LogIO:
         f.close()
         return (key + 1)
 
-    def add_new_log(self, log):
-        log_json = log.to_dict()
+    def addNewLog(self, log):
+        log_json = log.toDict()
         dataset_json = {}
         dataset_json["log_key"] = log.key
         dataset_json["dataset"] = log.dataset
@@ -104,6 +105,7 @@ class LogIO:
 
         # Write log file
         f = open(self.log_filename, "a+")
+        print(log_json)
         json.dump(log_json, f)
         f.write("\n")
         f.close()
@@ -124,7 +126,7 @@ class LogIO:
             (type, value, traceback) = sys.exc_info()
             sys.excepthook(type, value, traceback)
 
-    def rename_log(self, log_key, log_new_name):
+    def renameLog(self, log_key, log_new_name):
         #Load logs
         f = open(self.log_filename)
         lines = f.readlines()
@@ -143,7 +145,7 @@ class LogIO:
             f.write(line)
         f.close()
 
-    def remove_log(self, log_key):
+    def removeLog(self, log_key):
         #Remove in log file
         f = open(self.log_filename)
         lines = f.readlines()
@@ -205,7 +207,7 @@ class Log:
         self.dataset=dataset
         self.result=result
 
-    def to_dict(self):
+    def toDict(self):
         log_dict = {}
         log_dict["key"] = self.key
         log_dict["name"] = self.name
@@ -218,4 +220,4 @@ class Log:
 
 if __name__ == "__main__":
     log_io = LogIO()
-    log_io.rename_log(13, "newname")
+    log_io.renameLog(13, "newname")

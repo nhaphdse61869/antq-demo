@@ -32,67 +32,16 @@ class _LoggedPage(QWebEnginePage):
         print('JS: %s line %d: %s' % (source, line, msg))
 
 
-class GeoCoder(QNetworkAccessManager):
-    class NotFoundError(Exception):
-        pass
-
-    @trace
-    def __init__(self, parent):
-        super(GeoCoder, self).__init__(parent)
-
-    @trace
-    def geocode(self, location):
-        url = QUrl("http://maps.googleapis.com/maps/api/geocode/xml")
-
-        query = QUrlQuery()
-        query.addQueryItem("address", location)
-        query.addQueryItem("sensor", "false")
-
-        url.setQuery(query)
-        """
-        url = QUrl("http://maps.google.com/maps/geo/")
-        url.addQueryItem("q", location)
-        url.addQueryItem("output", "csv")
-        url.addQueryItem("sensor", "false")
-        """
-        request = QNetworkRequest(url)
-        reply = self.get(request)
-        while reply.isRunning():
-            QApplication.processEvents()
-
-        reply.deleteLater()
-        self.deleteLater()
-        return self._parseResult(reply)
-
-    @trace
-    def _parseResult(self, reply):
-        xml = reply.readAll()
-        reader = QXmlStreamReader(xml)
-        while not reader.atEnd():
-            reader.readNext()
-            if reader.name() != "geometry": continue
-            reader.readNextStartElement()
-            if reader.name() != "location": continue
-            reader.readNextStartElement()
-            if reader.name() != "lat": continue
-            latitude = float(reader.readElementText())
-            reader.readNextStartElement()
-            if reader.name() != "lng": continue
-            longitude = float(reader.readElementText())
-            return latitude, longitude
-        raise GeoCoder.NotFoundError
-
-
 class QGoogleMap(QWebEngineView):
-    mapMovedSignal = pyqtSignal(float, float)
-    mapClickedSignal = pyqtSignal(float, float)
-    mapRightClickedSignal = pyqtSignal(float, float)
-    mapDoubleClickedSignal = pyqtSignal(float, float)
+    map_moved_signal = pyqtSignal(float, float)
+    map_clicked_signal = pyqtSignal(float, float)
+    map_right_clicked_signal = pyqtSignal(float, float)
+    map_double_clicked_signal = pyqtSignal(float, float)
 
-    markerMovedSignal = pyqtSignal(str, float, float)
-    markerClickedSignal = pyqtSignal(str)
-    markerDoubleClickedSignal = pyqtSignal(str)
-    markerRightClickedSignal = pyqtSignal(str)
+    marker_moved_signal = pyqtSignal(str, float, float)
+    marker_clicked_signal = pyqtSignal(str)
+    marker_double_clicked_signal = pyqtSignal(str)
+    marker_right_clicked_signal = pyqtSignal(str)
 
     @trace
     def __init__(self, parent, debug=True):
@@ -100,12 +49,12 @@ class QGoogleMap(QWebEngineView):
         self.initialized = False
         self.loadFinished.connect(self.onLoadFinished)
 
-        webchannel = QWebChannel(self.page())
-        self.page().setWebChannel(webchannel)
-        webchannel.registerObject("qtWidget", self)
+        web_channel = QWebChannel(self.page())
+        self.page().setWebChannel(web_channel)
+        web_channel.registerObject("qtWidget", self)
 
-        basePath = os.path.abspath(os.path.dirname(__file__))
-        url = 'file:///' + basePath + '/qgmap.html'
+        base_path = os.path.abspath(os.path.dirname(__file__))
+        url = 'file:///' + base_path + '/qgmap.html'
         url = str(url.replace("\\","/"))
         print (url)
         self.load(QUrl(url))
@@ -125,10 +74,6 @@ class QGoogleMap(QWebEngineView):
             QApplication.processEvents()
 
     @trace
-    def geocode(self, location):
-        return GeoCoder(self).geocode(location)
-
-    @trace
     def runScript(self, script):
         return self.page().runJavaScript(script)
 
@@ -144,25 +89,6 @@ class QGoogleMap(QWebEngineView):
     def center(self):
         center = self.runScript("gmap_getCenter()")
         return center.lat, center.lng
-
-    @trace
-    def centerAtAddress(self, location):
-        try:
-            latitude, longitude = self.geocode(location)
-        except GeoCoder.NotFoundError:
-            return None, None
-        self.centerAt(latitude, longitude)
-        return latitude, longitude
-
-    @trace
-    def addMarkerAtAddress(self, location, **extra):
-        if 'title' not in extra:
-            extra['title'] = location
-        try:
-            latitude, longitude = self.geocode(location)
-        except GeoCoder.NotFoundError:
-            return None
-        return self.addMarker(location, latitude, longitude, 0, **extra)
 
     @trace
     def addMarker(self, key, latitude, longitude, cluster_number, **extra):
@@ -206,55 +132,38 @@ class QGoogleMap(QWebEngineView):
         return self.runScript("clearAllRoute()")
 
     @trace
-    def directss(self, listMarker, bestTour, cluster_number):
+    def createRoute(self, list_marker, best_tour, cluster_number):
         return self.runScript(
-            "displayAllRout({},{}, {});".format(listMarker,bestTour, cluster_number))
+            "displayAllRout({},{}, {});".format(list_marker, best_tour, cluster_number))
 
     @QtCore.pyqtSlot(str, float, float)
     def markerMoved(self, key, lat, long):
-        self.markerMovedSignal.emit(key, lat, long)
+        self.marker_moved_signal.emit(key, lat, long)
 
     @QtCore.pyqtSlot(str)
     def markerClicked(self, str):
-        self.markerClickedSignal.emit(str)
+        self.marker_clicked_signal.emit(str)
 
     @QtCore.pyqtSlot(str)
     def markerDoubleClicked(self, str):
-        self.markerDoubleClickedSignal.emit(str)
+        self.marker_double_clicked_signal.emit(str)
 
     @QtCore.pyqtSlot(str)
     def markerRightClicked(self, str):
-        self.markerRightClickedSignal.emit(str)
+        self.marker_right_clicked_signal.emit(str)
 
     @QtCore.pyqtSlot(float, float)
     def mapMoved(self, lat, long):
-        self.mapMovedSignal.emit(lat, long)
+        self.map_moved_signal.emit(lat, long)
 
     @QtCore.pyqtSlot(float, float)
     def mapClicked(self, lat, long):
-        self.mapClickedSignal.emit(lat, long)
+        self.map_clicked_signal.emit(lat, long)
 
     @QtCore.pyqtSlot(float, float)
     def mapRightClicked(self, lat, long):
-        self.mapRightClickedSignal.emit(lat, long)
+        self.map_right_clicked_signal.emit(lat, long)
 
     @QtCore.pyqtSlot(float, float)
     def mapDoubleClicked(self, lat, long):
-        self.mapDoubleClickedSignal.emit(lat, long)
-
-    def convertTo2DArray(self, listMarker):
-        api_key = "AIzaSyCNHayAJYOTf-gi30fTgbA3SEXpjj3LDFM"
-        gmaps = googlemaps.Client(key=api_key)
-
-        dis_mat = [[1 for x in range(len(listMarker))] for y in range(len(listMarker))]
-        for i in range(len(listMarker)):
-            for j in range(len(listMarker)):
-                if i == j :
-                    dis_mat[i][j] = 0
-                else :
-                    duration = gmaps.distance_matrix(origins=(listMarker[i]['latitude'],listMarker[i]['longitude']),
-                                                     destinations=(listMarker[j]['latitude'],listMarker[j]['longitude']),
-                                                     mode="driving")
-                    dis_mat[i][j] = duration['rows'][0]['elements'][0]['duration']['value']
-                print(dis_mat)
-        return dis_mat
+        self.map_double_clicked_signal.emit(lat, long)
