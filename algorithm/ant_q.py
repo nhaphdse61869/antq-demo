@@ -142,6 +142,7 @@ class AntQ(QThread):
             self.list_var.append(iter_variance)
             self.list_dev.append(iter_deviation)
 
+
 class Ant:
     def __init__(self, id, ant_q, start_node, q0=0.9):
         self.id = id
@@ -166,7 +167,7 @@ class Ant:
         q = random.random()
 
         if not self.isEnd():
-            max_node, max_val = self.ant_q.graph.getMaxAntQ(self.curr_node, self.nodes_to_visit)
+            max_node, max_val = self.ant_q.getHeuristicMax()
             if q <= self.q0:
                 # print("Exploitation")
                 next_node = max_node
@@ -238,6 +239,7 @@ class Ant:
         for s in self.nodes_to_visit:
             h_sum += self.getHeuristicValue(r, s)
         return h_sum
+
 
 class AntQGraph:
     def __init__(self, dis_mat, aq_mat=None):
