@@ -9,4 +9,3 @@ if __name__ == '__main__':
     # ex.showMaximized()
     ex = App()
     sys.exit(app.exec_())
-

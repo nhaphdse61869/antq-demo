@@ -147,12 +147,11 @@ class AntQClustering(QThread):
 
 
                     self.best_len = iter_best_length
-
                 #Add result to queue
                 aIter_result = {}
                 aIter_result["iteration"] = i
                 aIter_result["best_tour_len"] = iter_best_length
-                aIter_result["best_tour"] = self.clusters_best_tour
+                aIter_result["best_tour"] = self.clusters_best_tour.copy()
                 aIter_result["iter_avg"] = iter_avg
                 aIter_result["iter_variance"] = iter_variance
                 aIter_result["iter_deviation"] = iter_deviation

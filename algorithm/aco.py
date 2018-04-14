@@ -86,7 +86,7 @@ class ACO(QThread):
             aIter_result = {}
             aIter_result["iteration"] = gen
             aIter_result["best_tour_len"] = self.best_tour_len
-            aIter_result["best_tour"] = self.best_tour
+            aIter_result["best_tour"] = self.best_tour.copy()
             aIter_result["iter_avg"] = iter_avg
             aIter_result["iter_variance"] = iter_variance
             aIter_result["iter_deviation"] = iter_deviation
