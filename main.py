@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import sys
 
-from UI.MainUI import *
-from UI.ContainerWindow import *
+from ui.app import *
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
@@ -11,4 +9,3 @@ if __name__ == '__main__':
     # ex.showMaximized()
     ex = App()
     sys.exit(app.exec_())
-
