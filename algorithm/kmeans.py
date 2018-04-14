@@ -42,9 +42,6 @@ class KMean:
         #pick the first node at random
         node_index = rand.randint(0,len(self.dist_matrix) - 1)
         self.centers.append(node_index)
-        print(node_index)
-        print(len(self.dist_matrix))
-        print(len(self.clusters))
         self.clusters[node_index] = 0
 
         #now let's pick k-1 more random points

@@ -93,6 +93,10 @@ class AntQ(QThread):
             if ant.tour_len < self.best_tour_len:
                 self.best_tour = ant.tour
                 self.best_tour_len = ant.tour_len
+                print("ant tour: {}".format(ant.tour))
+                print("ant len: {}".format(ant.tour_len))
+                print("best tour: {}".format(self.best_tour))
+                print("best len: {}".format(self.best_tour_len))
                 self.best_ant = ant.id
                 self.best_iter = iter
 
@@ -117,6 +121,7 @@ class AntQ(QThread):
                 update_tour = iter_best
 
             self.updateDelayAntQ(update_tour)
+
 
             #self.renderFunc(i, self.best_tour_len, self.best_tour, iter_avg, iter_variance, iter_deviation)
             #self.iteration_finished.emit(i, self.best_tour_len, self.best_tour, iter_avg, iter_variance, iter_deviation)

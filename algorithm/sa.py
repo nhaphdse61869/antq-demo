@@ -113,7 +113,7 @@ class SimAnneal(QThread):
             aIter_result = {}
             aIter_result["iteration"] = self.iteration - 1
             aIter_result["best_tour_len"] = self.cur_fitness
-            aIter_result["best_tour"] = self.cur_solution
+            aIter_result["best_tour"] = self.cur_solution.copy()
             self.result_queue.put(aIter_result)
         self.run_finished.emit()
 

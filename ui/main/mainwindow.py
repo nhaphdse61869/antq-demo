@@ -328,6 +328,8 @@ class MainWindow(QWidget):
                             self.graphWP.best_length_chart.updateNewestLine(iteration, best_tour_len)
 
                     # Draw Graph
+                    print("Iteration : {}".format(iteration))
+                    print("what is hell {} - {}".format(prev_best_length, best_tour_len))
                     if prev_best_length > best_tour_len:
                         prev_best_length = best_tour_len
                         self.graph.updateClusterGraph(best_tour)
@@ -445,8 +447,6 @@ class MainWindow(QWidget):
             self.graphWP.antq_tab.Knum.setDisabled(True)
 
     def reset_graph(self):
-#        self.graph.clear_graph_tour()
-#        self.graph.draw_graph()
         self.graphWP.best_length_chart.clearChart()
         self.graphWP.mean_length_chart.clearChart()
         self.graphWP.st_deviation_chart.clearChart()
@@ -510,7 +510,7 @@ class MainWindow(QWidget):
 
             else:
                 error = QMessageBox()
-                error.critical(self, "Something error", "Error", QMessageBox.Ok)
+                error.critical(self, "Error", "Dataset of log isn't Google Map dataset", QMessageBox.Ok)
         except:
             (type, value, traceback) = sys.exc_info()
             sys.excepthook(type, value, traceback)
@@ -584,6 +584,7 @@ class OpenFileDialog(QWidget):
         fileName, _ = QFileDialog.getOpenFileName(self, "Open File", "",
                                                   "All Files (*);;Python Files (*.py)", options=options)
         if fileName:
+            self.numMarker = 0
             data = json.load(codecs.open(fileName, 'r', 'utf-8-sig'))
             for coord in data:
                 self.numMarker += 1
@@ -604,42 +605,55 @@ class OpenFileDialog(QWidget):
                                                   "All Files (*);;Python Files (*.py)", options=options)
 
         if fileName:
-            self.is_googlemap = False
-            #self.graph.points = []
-            self.graph.clearGraph()
-            if fileName.lower().endswith('.atsp'):
-                #Read atsp file
-                reader = ATSPReader(fileName.strip())
-                self.listMarker = reader.cities_tups
-                self.numMarker += len(self.listMarker)
+            try:
+                self.is_googlemap = False
+                # self.graph.points = []
+                self.graph.clearGraph()
+                if fileName.lower().endswith('.atsp'):
+                    # Read atsp file
+                    reader = ATSPReader(fileName.strip())
+                    self.listMarker = reader.cities_tups
+                    self.numMarker = len(self.listMarker)
 
-                self.dist_matrix = reader.dist_matrix
+                    self.dist_matrix = reader.dist_matrix
 
-                # Draw graph
-                self.graph.initCoordData(self.listMarker)
-
-            elif fileName.lower().endswith('.tsp'):
-                #Reader tsp file
-                reader = TSPFileReader(fileName.strip())
-                self.listMarker = reader.cities_tups
-                self.numMarker += len(self.listMarker)
-                self.dist_matrix = reader.dist_matrix
-
-                self.graph.initCoordData(self.listMarker)
-
-            elif fileName.lower().endswith('.json'):
-                self.is_googlemap = True
-                print("D")
-                #Reader tsp file
-                reader = GMapDataReader(fileName.strip())
-                self.listMarker = reader.cities_tups
-                self.numMarker += len(self.listMarker)
-                self.dist_matrix = reader.dist_matrix
-                self.list_address = reader.list_address
-                print("D")
-                # Draw graph
-                try:
+                    # Draw graph
                     self.graph.initCoordData(self.listMarker)
-                except:
-                    traceback.print_exc()
+
+                elif fileName.lower().endswith('.tsp'):
+                    # Reader tsp file
+                    reader = TSPFileReader(fileName.strip())
+                    self.listMarker = reader.cities_tups
+                    self.numMarker = len(self.listMarker)
+                    self.dist_matrix = reader.dist_matrix
+
+                    self.graph.initCoordData(self.listMarker)
+
+                elif fileName.lower().endswith('.json'):
+                    self.is_googlemap = True
+                    print("D")
+                    # Reader tsp file
+                    reader = GMapDataReader(fileName.strip())
+                    self.listMarker = reader.cities_tups
+                    self.numMarker = len(self.listMarker)
+                    self.dist_matrix = reader.dist_matrix
+                    self.list_address = reader.list_address
+                    print("D")
+                    # Draw graph
+                    try:
+                        self.graph.initCoordData(self.listMarker)
+                    except:
+                        traceback.print_exc()
+                if self.numMarker < 1:
+                    qm = QMessageBox
+                    qm.critical(self.parent(), "", "Wrong file!")
+            except:
+                self.graph.clearGraph()
+                self.listMarker = []
+                self.numMarker = 0
+                self.dist_matrix = []
+                qm = QMessageBox
+                qm.critical(self.parent(), "", "Wrong file!")
+
+
 
