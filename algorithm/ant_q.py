@@ -81,7 +81,7 @@ class AntQ(QThread):
         variance = self.computeIterVariance()
         return np.math.sqrt(variance)
 
-    def runIter(self, iter):
+    def runIter(self, i):
         iter_min = sys.maxsize
         iter_best = []
         self.createAnts()
@@ -98,7 +98,7 @@ class AntQ(QThread):
                 print("best tour: {}".format(self.best_tour))
                 print("best len: {}".format(self.best_tour_len))
                 self.best_ant = ant.id
-                self.best_iter = iter
+                self.best_iter = i
 
             if ant.tour_len < iter_min:
                 iter_min = ant.tour_len
@@ -142,6 +142,7 @@ class AntQ(QThread):
             self.list_var.append(iter_variance)
             self.list_dev.append(iter_deviation)
 
+
 class Ant:
     def __init__(self, id, ant_q, start_node, q0=0.9):
         self.id = id
@@ -166,7 +167,7 @@ class Ant:
         q = random.random()
 
         if not self.isEnd():
-            max_node, max_val = self.ant_q.graph.getMaxAntQ(self.curr_node, self.nodes_to_visit)
+            max_node, max_val = self.ant_q.getHeuristicMax()
             if q <= self.q0:
                 # print("Exploitation")
                 next_node = max_node
@@ -182,18 +183,21 @@ class Ant:
             if next_node == -1:
                 raise Exception("next_node < 0")
 
-            self.updateAntQ(self.curr_node, next_node, max_val)
+            self.nodes_to_visit.remove(next_node)
+            next_avail_nodes = self.nodes_to_visit[:]
+            if not next_avail_nodes:
+                next_avail_nodes = self.tour[:]
+
+            max_next_node, max_next_val = self.ant_q.graph.getMaxAntQ(next_node, next_avail_nodes)
+            self.updateAntQ(self.curr_node, next_node, max_next_val)
             # print("next node: %s" % (next_node, ))
             self.tour_len += self.ant_q.graph.getDistance(self.curr_node, next_node)
             self.tour.append(next_node)
             self.curr_node = next_node
-            self.nodes_to_visit.remove(next_node)
 
         else:
             curr_node = self.tour[-1]
             next_node = self.tour[0]
-            aq_val = self.ant_q.graph.getAntQValue(curr_node, next_node)
-            self.updateAntQ(curr_node, next_node, aq_val)
             self.tour_len += self.ant_q.graph.getDistance(curr_node, next_node)
 
     def updateAntQ(self, curr_node, next_node, max_val):
@@ -235,6 +239,7 @@ class Ant:
         for s in self.nodes_to_visit:
             h_sum += self.getHeuristicValue(r, s)
         return h_sum
+
 
 class AntQGraph:
     def __init__(self, dis_mat, aq_mat=None):
