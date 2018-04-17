@@ -2,10 +2,35 @@
 var map;
 var markers = [];
 var qtWidget;
+var directionsDisplays = [];
 
 new QWebChannel(qt.webChannelTransport, function (channel) {
     qtWidget = channel.objects.qtWidget;
 });
+
+// Sets the map on all markers in the array.
+  function setMapOnAll(map) {
+    for (var i = 0; i < markers.length; i++) {
+      markers[i].setMap(map);
+    }
+  }
+
+// Removes the markers from the map, but keeps them in the array.
+function clearMarkers() {
+    setMapOnAll(null);
+}
+
+  // Deletes all markers in the array by removing references to them.
+function deleteMarkers() {
+    clearMarkers();
+    markers = [];
+}
+
+function clearAllRoute(){
+      for (var i = 0; i < directionsDisplays.length; i++) {
+            directionsDisplays[i].setMap(null);
+        }
+}
 
 // main init function
 function initialize() {
@@ -45,17 +70,83 @@ function gmap_setZoom(zoom) {
     map.setZoom(zoom);
 }
 
-function gmap_addMarker(key, latitude, longitude, parameters) {
+function rgbToHex(r, g, b) {
+    return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
 
-    if (key in markers) {
-        gmap_deleteMarker(key);
+function change_color_based_on_cluster(number_cluster) {
+    var r = 255;
+    var g = 255;
+    var b = 255;
+    if(number_cluster % 3 == 0) {
+        r = 0;
+        g = 255/50 * number_cluster;
+    } else if(number_cluster % 3 == 1) {
+        g = 0;
+        b = 255/50 * number_cluster;
+    } else if(number_cluster % 3 == 2) {
+        b = 0;
+        r = 255/50 * number_cluster;
     }
+    return rgbToHex(r, g, b);
+}
+
+function get_center_coords(listCoords) {
+    var total_X = 0;
+    var total_Y = 0;
+    var result = [];
+    for(var i = 0; i < listCoords.length; i++) {
+        total_X += listCoords[i][0];
+        total_Y += listCoords[i][1];
+    }
+    alert(total_X);
+    result['latitude'] = total_X / listCoords.length;
+    result['longitude'] = total_Y / listCoords.length;
+    alert("latitude: " + result['latitude'] +"|longitude: "+result['longitude']);
+    return result;
+}
+
+function draw_circle(center, max_r){
+    alert("max R:" + max_r);
+    var centerPoint = new google.maps.LatLng(center['latitude'], center['longitude']);
+    var cityCircle = new google.maps.Circle({
+            //strokeColor: '#FF0000',
+            strokeOpacity: 0.2,
+            strokeWeight: 2,
+            fillColor: '#FF0000',
+            fillOpacity: 0.35,
+            map: map,
+            center: centerPoint,
+            radius: Math.pow(2,max_r) * 3141.592654
+    });
+}
+
+function get_max_r(center, listCoords) {
+    var max_r = 0;
+    for(var i = 0; i < listCoords.length; i++) {
+        var curr_r = Math.sqrt(Math.pow(2, center['latitude']-listCoords[i][0]) + Math.pow(2, center['longitude']-listCoords[i][1]));
+        if(curr_r > max_r) {
+            max_r = curr_r;
+        }
+    }
+    return max_r;
+}
+
+function gmap_addMarker(key, latitude, longitude, cluster_number, parameters) {
+    /*if (key in markers) {
+        gmap_deleteMarker(key);
+    }*/
 
     var coords = new google.maps.LatLng(latitude, longitude);
-    parameters['map'] = map
+    var icon  = marker_sympol(cluster_number);
+    var label = [];
+    label['text'] = key;
+    label['color'] = 'white';
+    parameters['map'] = map;
     parameters['position'] = coords;
-    parameters['label'] = key;
-
+    parameters['label'] = label;
+    parameters['icon'] = icon;
+    //parameters['icon'] = 'yellowMarker.png';
     var marker = new google.maps.Marker(parameters);
     google.maps.event.addListener(marker, 'dragend', function () {
         qtWidget.markerMoved(key, marker.position.lat(), marker.position.lng())
@@ -70,8 +161,22 @@ function gmap_addMarker(key, latitude, longitude, parameters) {
         qtWidget.markerRightClicked(key, marker.position.lat(), marker.position.lng())
     });
 
-    markers[key] = marker;
+    markers.push(marker);
     return key;
+}
+
+function marker_sympol(number_cluster) {
+    var color = change_color_based_on_cluster(number_cluster);
+    return {
+        path: 'M 0,0 C -2,-20 -10,-22 -10,-30 A 10,10 0 1,1 10,-30 C 10,-22 2,-20 0,0 z',
+        fillColor: color,
+        primaryColor: 'white',
+        fillOpacity: 1,
+        strokeColor: '#000',
+        strokeWeight: 2,
+        scale: 1,
+        labelOrigin: new google.maps.Point(0,-25)
+    };
 }
 
 function calculateAndDisplayRoute(oLat, oLong, dLat, dLong) {
@@ -98,27 +203,37 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function displayAllRout(listCoords) {
+async function displayAllRout(listCoords, bestTour, cluster_number) {
     var directionsService = new google.maps.DirectionsService;
-    for(var i = 0; i < listCoords.length-1; i++) {
-        var currentCoord = new google.maps.LatLng(listCoords[i].latitude, listCoords[i].longitude);
-        var nextCoord = new google.maps.LatLng(listCoords[i+1].latitude, listCoords[i+1].longitude);
+    for(var i = 0; i < bestTour.length-1; i++) {
+        var currentCoord = new google.maps.LatLng(listCoords[bestTour[i]][0], listCoords[bestTour[i]][1]);
+        var nextCoord = new google.maps.LatLng(listCoords[bestTour[i+1]][0], listCoords[bestTour[i+1]][1]);
         directionsService.route({
             origin: currentCoord,
             destination: nextCoord,
             travelMode: 'DRIVING'
         }, function (response, status) {
             if (status === 'OK') {
+                var color = change_color_based_on_cluster(cluster_number);
                 var directionsDisplay = new google.maps.DirectionsRenderer;
                 directionsDisplay.setMap(map);
-                directionsDisplay.setOptions({suppressMarkers: true});
+                directionsDisplay.setOptions({  suppressMarkers: true,
+                                                polylineOptions: {
+                                                        strokeColor: color,
+                                                        strokeOpacity: 0.5,
+                                                        strokeWeight: 10
+                                                }});
                 directionsDisplay.setDirections(response);
+                directionsDisplays.push(directionsDisplay)
             } else {
-            window.alert('Directions request failed due to ' + status);
+                window.alert('Directions request failed due to ' + status);
             }
         });
-        await sleep(200);
+        await sleep(1000);
     }
+    //var center = get_center_coords(listCoords);
+    //var max_r = get_max_r(center, listCoords);
+    //draw_circle(center, max_r);
 }
 
 function displayAllRouteVer2(listCoords, bestTour) {
@@ -126,8 +241,8 @@ function displayAllRouteVer2(listCoords, bestTour) {
     var waypts = [];
     for(var i = 1; i < listCoords.length; i++) {
         if(i%10==9) {
-            var start = new google.maps.LatLng(listCoords[bestTour[i-9]].latitude, listCoords[bestTour[i-9]].longitude);
-            var end = new google.maps.LatLng(listCoords[bestTour[i]].latitude, listCoords[bestTour[i]].longitude);
+            var start = new google.maps.LatLng(listCoords[bestTour[i-9]][0], listCoords[bestTour[i-9]][1]);
+            var end = new google.maps.LatLng(listCoords[bestTour[i]][0], listCoords[bestTour[i]][1]);
             directionsService.route({
                 origin: start,
                 destination: end,
@@ -147,8 +262,8 @@ function displayAllRouteVer2(listCoords, bestTour) {
             waypts = [];
         } else if(i==listCoords.length-1) {
             var sub = i%10;
-            var start = new google.maps.LatLng(listCoords[bestTour[i-sub]].latitude, listCoords[i-sub].longitude);
-            var end = new google.maps.LatLng(listCoords[bestTour[i]].latitude, listCoords[i].longitude);
+            var start = new google.maps.LatLng(listCoords[bestTour[i-sub]][0], listCoords[i-sub][1]);
+            var end = new google.maps.LatLng(listCoords[bestTour[i]][0], listCoords[i][1]);
             directionsService.route({
                 origin: start,
                 destination: end,
@@ -166,12 +281,12 @@ function displayAllRouteVer2(listCoords, bestTour) {
                 }
             });
         } else if(i%10!=0) {
-            var cur = new google.maps.LatLng(listCoords[bestTour[i]].latitude, listCoords[bestTour[i]].longitude);
+            var cur = new google.maps.LatLng(listCoords[bestTour[i]][0], listCoords[bestTour[i]][1]);
             waypts.push({
               location: cur,
               stopover: true
             });
-            alert(listCoords[bestTour[i]].latitude);
+            alert(listCoords[bestTour[i]][0]);
         }
     }
 }

@@ -1,10 +1,7 @@
 import random as rand
 import math as math
-#import pkg_resources
-#pkg_resources.require("matplotlib")
+
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
 
 class KMean:
     def __init__(self, points, dist_matrix, k):
@@ -14,14 +11,14 @@ class KMean:
         self.centers = []     #center point index
         self.points = points  #list of point dictionary
 
-    def is_center(self, index):
+    def isCenter(self, index):
         for i in range(len(self.centers)):
             if index == self.centers[i]:
                 return True
         return False
 
     #this method returns the next random node
-    def next_center_point(self):
+    def getNextCenterPoint(self):
         #init total dist
         total_dist = []
         for i in range(len(self.dist_matrix)):
@@ -29,7 +26,7 @@ class KMean:
 
         #compute total distance from a point to all center
         for i in range(len(self.dist_matrix)):
-            if not self.is_center(i):
+            if not self.isCenter(i):
                 for mean in self.centers:
                     total_dist[i] = total_dist[i] + self.dist_matrix[mean][i]
 
@@ -41,22 +38,22 @@ class KMean:
                 max_index = i
         return max_index
 
-    def initial_centers(self):
+    def initCenters(self):
         #pick the first node at random
-        node_index = rand.randint(0,len(self.dist_matrix))
+        node_index = rand.randint(0,len(self.dist_matrix) - 1)
         self.centers.append(node_index)
         self.clusters[node_index] = 0
 
         #now let's pick k-1 more random points
         for i in range(1, self.k):
-            node_index = self.next_center_point()
+            node_index = self.getNextCenterPoint()
             self.centers.append(node_index)
             self.clusters[node_index] = i
 
-    def compute_distance(self, x1, y1, x2, y2):
+    def computeDistance(self, x1, y1, x2, y2):
         return math.sqrt(math.pow(x1 - x2,2.0) + math.pow(y1 - y2,2.0))
 
-    def compute_centers(self):
+    def computeCenters(self):
         centers = []
         for cluster_index in range(len(self.centers)):
             center_x = 0
@@ -66,8 +63,8 @@ class KMean:
                 number_point += 1
                 #check if it is in cluster
                 if self.clusters[i] == cluster_index:
-                    center_x += self.points[i]['latitude']
-                    center_y += self.points[i]['longitude']
+                    center_x += self.points[i][0]
+                    center_y += self.points[i][1]
             #compute center x, y
             center_x = center_x/number_point
             center_y = center_y/number_point
@@ -76,7 +73,7 @@ class KMean:
             min_center = self.centers[cluster_index]
             for i in range(len(self.dist_matrix)):
                 if self.clusters[i] == cluster_index:
-                    dist = self.compute_distance(center_x, center_y, self.points[i]['latitude'], self.points[i]['longitude'])
+                    dist = self.computeDistance(center_x, center_y, self.points[i][0], self.points[i][1])
                     if min_dist < 0 or dist < min_dist:
                         min_dist = dist
                         min_center = i
@@ -84,10 +81,10 @@ class KMean:
         return centers
 
     #this method assign nodes to the cluster with the smallest mean
-    def assign_points(self):
+    def assignPoints(self):
         for i in range(len(self.dist_matrix)):
             #check if point is center
-            if not self.is_center(i):
+            if not self.isCenter(i):
                 #compare distance from point to center point
                 min_center = 0
                 min_dist = self.dist_matrix[self.centers[0]][i]
@@ -98,7 +95,7 @@ class KMean:
                 #assign cluster to point
                 self.clusters[i] = min_center
 
-    def is_same_centers(self, centers):
+    def isSameCenters(self, centers):
         #check the current mean with the previous one to see if we should stop
         for i in range(len(centers)):
             have_center = False
@@ -112,20 +109,14 @@ class KMean:
     #k_means algorithm
     def run(self):
         #compute the initial means
-        self.initial_centers()
+        self.initCenters()
         stop = False
         while not stop:
-            self.assign_points()
+            self.assignPoints()
 
-            centers = self.compute_centers()
+            centers = self.computeCenters()
 
-            stop = self.is_same_centers(centers)
+            stop = self.isSameCenters(centers)
             if not stop:
                 self.centers = centers
         return 0
-
-def main():
-    pass
-
-if __name__ == '__main__':
-    main()

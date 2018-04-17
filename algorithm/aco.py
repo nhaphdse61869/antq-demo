@@ -1,21 +1,23 @@
 import random
+import sys
+import math
+from PyQt5.QtCore import QThread, pyqtSignal
 
-
-class Graph(object):
-    def __init__(self, cost_matrix: list, mat_size: int):
+class ACOGraph(object):
+    def __init__(self, dist_matrix, mat_size):
         """
         :param cost_matrix:
         :param mat_size: size of the cost matrix
         """
-        self.matrix = cost_matrix
+        self.matrix = dist_matrix
         self.mat_size = mat_size
         # noinspection PyUnusedLocal
         self.pheromone = [[1 / (mat_size * mat_size) for j in range(mat_size)] for i in range(mat_size)]
 
 
-class ACO(object):
-    def __init__(self, ant_count: int, generations: int, alpha: float, beta: float, rho: float, q: int,
-                 strategy: int):
+class ACO(QThread):
+    run_finished = pyqtSignal()
+    def __init__(self, ant_count, generations, graph, alpha, beta, rho, q, strategy, result_queue=None):
         """
         :param ant_count:
         :param generations:
@@ -25,6 +27,9 @@ class ACO(object):
         :param q: pheromone intensity
         :param strategy: pheromone update strategy. 0 - ant-cycle, 1 - ant-quality, 2 - ant-density
         """
+        QThread.__init__(self)
+        self.clusters_point = [list(range(graph.mat_size))]
+        self.graph = graph
         self.Q = q
         self.rho = rho
         self.beta = beta
@@ -32,8 +37,16 @@ class ACO(object):
         self.ant_count = ant_count
         self.generations = generations
         self.update_strategy = strategy
+        self.result_queue = result_queue
+        self.best_tour = []
+        self.best_tour_len = sys.maxsize
+        self.list_best_tour = []
+        self.list_best_len = []
+        self.list_avg = []
+        self.list_var = []
+        self.list_dev = []
 
-    def _update_pheromone(self, graph: Graph, ants: list):
+    def _updatePheromone(self, graph: ACOGraph, ants: list):
         for i, row in enumerate(graph.pheromone):
             for j, col in enumerate(row):
                 graph.pheromone[i][j] *= self.rho
@@ -41,31 +54,53 @@ class ACO(object):
                     graph.pheromone[i][j] += ant.pheromone_delta[i][j]
 
     # noinspection PyProtectedMember
-    def solve(self, graph: Graph):
-        """
-        :param graph:
-        """
+    def iterRun(self):
+        total_cost = 0
+        avg_cost = 0
         best_cost = float('inf')
         best_solution = []
+        ants = [_Ant(self, self.graph) for i in range(self.ant_count)]
+        for ant in ants:
+            for i in range(self.graph.mat_size - 1):
+                ant._selectNext()
+            ant.total_cost += self.graph.matrix[ant.tabu[-1]][ant.tabu[0]]
+            total_cost += ant.total_cost
+            if ant.total_cost < best_cost:
+                best_cost = ant.total_cost
+                best_solution = [] + ant.tabu
+            # update pheromone
+            ant._updatePheromoneDelta()
+        avg_cost = total_cost / self.ant_count
+        variance = 0
+        for ant in ants:
+            variance += ((ant.total_cost -avg_cost)**2 / (self.ant_count - 1))
+        deviation = math.sqrt(variance)
+        self._updatePheromone(self.graph, ants)
+        return best_solution, best_cost, avg_cost, variance, deviation
+
+    def run(self):
         for gen in range(self.generations):
-            # noinspection PyUnusedLocal
-            ants = [_Ant(self, graph) for i in range(self.ant_count)]
-            for ant in ants:
-                for i in range(graph.mat_size - 1):
-                    ant._select_next()
-                ant.total_cost += graph.matrix[ant.tabu[-1]][ant.tabu[0]]
-                if ant.total_cost < best_cost:
-                    best_cost = ant.total_cost
-                    best_solution = [] + ant.tabu
-                # update pheromone
-                ant._update_pheromone_delta()
-            self._update_pheromone(graph, ants)
-            # print('generation #{}, best cost: {}, path: {}'.format(gen, best_cost, best_solution))
-        return best_solution, best_cost
+            iter_best_tour, iter_best_len, iter_avg, iter_variance, iter_deviation = self.iterRun()
+            self.best_tour_len = iter_best_len
+            self.best_tour = iter_best_tour
+            aIter_result = {}
+            aIter_result["iteration"] = gen
+            aIter_result["best_tour_len"] = self.best_tour_len
+            aIter_result["best_tour"] = self.best_tour.copy()
+            aIter_result["iter_avg"] = iter_avg
+            aIter_result["iter_variance"] = iter_variance
+            aIter_result["iter_deviation"] = iter_deviation
+            self.result_queue.put(aIter_result)
+            self.list_best_tour.append(self.best_tour)
+            self.list_best_len.append(self.best_tour_len)
+            self.list_avg.append(iter_avg)
+            self.list_var.append(iter_variance)
+            self.list_dev.append(iter_deviation)
+        self.run_finished.emit()
 
 
 class _Ant(object):
-    def __init__(self, aco: ACO, graph: Graph):
+    def __init__(self, aco: ACO, graph: ACOGraph):
         self.colony = aco
         self.graph = graph
         self.total_cost = 0.0
@@ -79,7 +114,7 @@ class _Ant(object):
         self.current = start
         self.allowed.remove(start)
 
-    def _select_next(self):
+    def _selectNext(self):
         denominator = 0
         for i in self.allowed:
             denominator += self.graph.pheromone[self.current][i] ** self.colony.alpha * self.eta[self.current][
@@ -107,7 +142,7 @@ class _Ant(object):
         self.current = selected
 
     # noinspection PyUnusedLocal
-    def _update_pheromone_delta(self):
+    def _updatePheromoneDelta(self):
         self.pheromone_delta = [[0 for j in range(self.graph.mat_size)] for i in range(self.graph.mat_size)]
         for _ in range(1, len(self.tabu)):
             i = self.tabu[_ - 1]
