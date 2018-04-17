@@ -167,7 +167,7 @@ class Ant:
         q = random.random()
 
         if not self.isEnd():
-            max_node, max_val = self.ant_q.getHeuristicMax()
+            max_node, max_val = self.getHeuristicMax()
             if q <= self.q0:
                 # print("Exploitation")
                 next_node = max_node
@@ -184,13 +184,9 @@ class Ant:
                 raise Exception("next_node < 0")
 
             self.nodes_to_visit.remove(next_node)
-            next_avail_nodes = self.nodes_to_visit[:]
-            if not next_avail_nodes:
-                next_avail_nodes = self.tour[:]
 
-            max_next_node, max_next_val = self.ant_q.graph.getMaxAntQ(next_node, next_avail_nodes)
-            self.updateAntQ(self.curr_node, next_node, max_next_val)
-            # print("next node: %s" % (next_node, ))
+            learned_val = self.ant_q.graph.getMaxAntQ(next_node)
+            self.updateAntQ(self.curr_node, next_node, learned_val)
             self.tour_len += self.ant_q.graph.getDistance(self.curr_node, next_node)
             self.tour.append(next_node)
             self.curr_node = next_node
@@ -246,11 +242,14 @@ class AntQGraph:
         self.aq_mat = aq_mat
         self.dis_mat = dis_mat
         if aq_mat is None:
-            self.aq_mat = [[1.0/999999 for x in range(len(self.dis_mat))] for y in range(len(self.dis_mat))]
-            # for i in range(0, len(self.dis_mat)):
-            #     for j in range(0, len(self.dis_mat[i])):
-            #         if self.dis_mat[i][j] != 0:
-            #             self.aq_mat[i][j] = 1 / (self.dis_mat[i][j])
+            # self.aq_mat = [[1.0/999999 for x in range(len(self.dis_mat))] for y in range(len(self.dis_mat))]
+            s = 0
+            for i in range(0, len(self.dis_mat)):
+                for j in range(0, len(self.dis_mat[i])):
+                    if i != j:
+                        s += dis_mat[i][j]
+            self.aq_mat = [[(len(self.dis_mat) - 1)/ s for x in range(len(self.dis_mat))] for y in range(len(self.dis_mat))]
+
         self.num_node = len(self.aq_mat)
 
     def getAntQValue(self, r, s):
@@ -263,14 +262,7 @@ class AntQGraph:
         distance = 1.0 / self.getDistance(r, s)
         return distance
 
-    def getMaxAntQ(self, r, nodes_to_visit):
-        max_val = -1
-        max_node = -1
-        for s in nodes_to_visit:
-            ant_q_val = self.getAntQValue(r, s)
-            if ant_q_val > max_val:
-                max_val = ant_q_val
-                max_node = s
-        return max_node, max_val
+    def getMaxAntQ(self, r):
+        return max(self.aq_mat[r][:])
 
 
