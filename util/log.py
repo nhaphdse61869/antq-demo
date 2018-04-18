@@ -138,6 +138,7 @@ class LogIO:
             if log_json["key"] == log_key:
                 log_json["name"] = log_new_name
                 lines[i] = json.dumps(log_json)
+                lines[i] = lines[i] + "\n"
 
         #Save to file
         f = open(self.log_filename, "w")

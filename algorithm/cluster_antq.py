@@ -1,6 +1,6 @@
 from algorithm.ant_q import AntQ
 from algorithm.ant_q import AntQGraph
-from algorithm.kmeans import KMean
+from algorithm.kmeanpp import KMeanPP
 
 from PyQt5.QtCore import QThread, pyqtSignal
 
@@ -54,7 +54,7 @@ class AntQClustering(QThread):
 
     def initClusters(self):
         #Divide graph into k cluster
-        kmean = KMean(points=self.list_point, dist_matrix=self.dist_matrix, k=self.k)
+        kmean = KMeanPP(points=self.list_point, dist_matrix=self.dist_matrix, k=self.k)
         kmean.run()
 
         #For each cluster

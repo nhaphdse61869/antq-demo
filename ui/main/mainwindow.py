@@ -171,7 +171,7 @@ class MainWindow(QWidget):
             self.graphWP.param_layout.addRow(QLabel("Discount factor: "), QLabel(str(self.DF)))
             self.graphWP.param_layout.addRow(QLabel("Balance Rate: "), QLabel(str(self.BR)))
             self.graphWP.param_layout.addRow(QLabel("Delta: "), QLabel(str(self.delta)))
-            self.graphWP.param_layout.addRow(QLabel("Beta: "), QLabel(str(self.delta)))
+            self.graphWP.param_layout.addRow(QLabel("Beta: "), QLabel(str(self.beta)))
             dr = "Iter"
             if self.global_best:
                 dr = "Global"
@@ -185,7 +185,7 @@ class MainWindow(QWidget):
             self.graphWP.param_layout.addRow(QLabel("Discount factor: "), QLabel(str(self.DF)))
             self.graphWP.param_layout.addRow(QLabel("Balance Rate: "), QLabel(str(self.BR)))
             self.graphWP.param_layout.addRow(QLabel("Delta: "), QLabel(str(self.delta)))
-            self.graphWP.param_layout.addRow(QLabel("Beta: "), QLabel(str(self.delta)))
+            self.graphWP.param_layout.addRow(QLabel("Beta: "), QLabel(str(self.beta)))
         elif self.algorithm == "Simulated Annealing":
             self.graphWP.param_layout.addRow(QLabel("Algorithm: "), QLabel("ACO"))
             self.graphWP.param_layout.addRow(QLabel("Number of cluster: "), QLabel(str(self.k_number)))
@@ -333,6 +333,7 @@ class MainWindow(QWidget):
                     if prev_best_length > best_tour_len:
                         prev_best_length = best_tour_len
                         self.graph.updateClusterGraph(best_tour)
+
                 else:
                     self.save_log_signal.emit()
                     break

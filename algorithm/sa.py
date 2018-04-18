@@ -70,6 +70,8 @@ class SimAnneal(QThread):
         Probability of accepting if the candidate is worse than current
         Depends on the current temperature and difference between candidate and current
         """
+        if self.T == 0:
+            return 0
         return math.exp(-abs(candidate_fitness - self.cur_fitness) / self.T)
 
     def accept(self, candidate):

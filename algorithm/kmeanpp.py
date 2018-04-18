@@ -1,9 +1,9 @@
 import random as rand
 import math as math
-
+import sys
 import numpy as np
 
-class KMean:
+class KMeanPP:
     def __init__(self, points, dist_matrix, k):
         self.dist_matrix = dist_matrix
         self.k = k
@@ -20,23 +20,27 @@ class KMean:
     #this method returns the next random node
     def getNextCenterPoint(self):
         #init total dist
-        total_dist = []
-        for i in range(len(self.dist_matrix)):
-            total_dist.append(0)
+        dist = [0 for i in range(len(self.dist_matrix))]
+        weighted_list = [0 for i in range(len(self.dist_matrix))]
 
         #compute total distance from a point to all center
         for i in range(len(self.dist_matrix)):
             if not self.isCenter(i):
+                dist[i] = sys.maxsize
                 for mean in self.centers:
-                    total_dist[i] = total_dist[i] + self.dist_matrix[mean][i]
+                    if self.dist_matrix[mean][i] < dist[i]:
+                        dist[i] = self.dist_matrix[mean][i]
+            else:
+                dist[i] = 0
+            dist[i] = math.pow(dist[i], 2)
 
-        #get max point index
-        max_dist = 0
-        max_index = 0
-        for i in range(len(total_dist)):
-            if total_dist[i] > max_dist:
-                max_index = i
-        return max_index
+        # Compute weight
+        for i in range(len(self.dist_matrix)):
+            weighted_list[i] = dist[i]/sum(dist)
+
+        result = rand.choices(list(range(len(dist))), weights=weighted_list)
+
+        return result[0]
 
     def initCenters(self):
         #pick the first node at random

@@ -318,13 +318,13 @@ class SimAnnealTab(QWidget):
 
         self.iteration_spin = QSpinBox()
         self.iteration_spin.setMinimum(0)
-        self.iteration_spin.setMaximum(100)
-        self.iteration_spin.setValue(1)
+        self.iteration_spin.setMaximum(1000)
+        self.iteration_spin.setValue(200)
 
         self.beta_spin = QSpinBox()
         self.beta_spin.setMinimum(0)
         self.beta_spin.setMaximum(100)
-        self.beta_spin.setValue(2)
+        self.beta_spin.setValue(90)
 
         self.form_layout1.addRow(QLabel("Iter:"), self.iteration_spin)
         self.form_layout1.addRow(QLabel("β:"), self.beta_spin)
