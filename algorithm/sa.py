@@ -104,7 +104,10 @@ class SimAnneal(QThread):
             self.list_iter.append(self.iteration - 1)
             self.best_tours.append(self.cur_solution)
             self.best_lens.append(self.cur_fitness)
-            self.T *= self.alpha
+            t = self.T * self.alpha
+            if t > 0:
+                self.T = t
+
             self.iteration += 1
 
             self.fitness_list.append(self.cur_fitness)

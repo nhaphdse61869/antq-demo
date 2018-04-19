@@ -10,7 +10,7 @@ import math
 
 
 class AntQ(QThread):
-    def __init__(self, number_of_ants, num_of_iteration, graph, alpha=.1, gamma=.3, delta=1, beta=2, w=10, global_best=True, result=None):
+    def __init__(self, number_of_ants, num_of_iteration, graph, alpha=.1, gamma=.3, delta=1, beta=2, w=10, global_best=False, result=None):
         QThread.__init__(self)
         self.number_of_ants = number_of_ants
         self.alpha = alpha
@@ -107,12 +107,12 @@ class AntQ(QThread):
         iter_avg = self.computeIterAvg()
         iter_variance = self.computeIterVariance()
 
-        return iter_avg, iter_variance, iter_best
+        return iter_avg, iter_variance, iter_best, iter_min
 
     def run(self):
         for i in range(0, self.num_of_iteration):
             # print("Iteration[%s]" % i)
-            iter_avg, iter_variance, iter_best = self.runIter(i)
+            iter_avg, iter_variance, iter_best, iter_min = self.runIter(i)
             iter_deviation = np.math.sqrt(iter_variance)
 
             if self.global_best:
