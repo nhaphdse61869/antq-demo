@@ -118,24 +118,44 @@ class _Ant(object):
         denominator = 0
         for i in self.allowed:
             denominator += self.graph.pheromone[self.current][i] ** self.colony.alpha * self.eta[self.current][
-                                                                                            i] ** self.colony.beta
+                                                                                          i] ** self.colony.beta
+
         # noinspection PyUnusedLocal
         probabilities = [0 for i in range(self.graph.mat_size)]  # probabilities for moving to a node in the next step
         for i in range(self.graph.mat_size):
             try:
                 self.allowed.index(i)  # test if allowed list contains i
-                probabilities[i] = self.graph.pheromone[self.current][i] ** self.colony.alpha * \
-                    self.eta[self.current][i] ** self.colony.beta / denominator
+                if denominator == 0:
+                    probabilities[i] = 0
+                else:
+                    probabilities[i] = self.graph.pheromone[self.current][i] ** self.colony.alpha * \
+                        self.eta[self.current][i] ** self.colony.beta / denominator
             except ValueError:
                 pass  # do nothing
         # select next node by probability roulette
-        selected = 0
         rand = random.random()
         for i, probability in enumerate(probabilities):
             rand -= probability
             if rand <= 0:
                 selected = i
                 break
+
+        # for i in self.allowed:
+        #     denominator += denominator + self.graph.pheromone[self.current][i] ** self.colony.alpha \
+        #                    * self.eta[self.current][i] ** self.colony.beta
+        #
+        # probabilities = []
+        # s = 0
+        # for j in self.allowed:
+        #     p = (self.graph.pheromone[self.current][j] ** self.colony.alpha * self.eta[self.current][j] ** self.colony.beta) / denominator
+        #     s += p
+        #     probabilities.append(p)
+        #
+        # print(s)
+        #
+        # import numpy as np
+        # selected = np.random.choice(self.allowed, 1, replace=False, p=probabilities)[0]
+
         self.allowed.remove(selected)
         self.tabu.append(selected)
         self.total_cost += self.graph.matrix[self.current][selected]

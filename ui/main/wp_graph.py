@@ -312,13 +312,16 @@ class SimAnnealTab(QWidget):
         self.top_layout.addWidget(QLabel('T_min'), 0, 2)
         self.top_layout.addWidget(self.temper_end_spin, 0, 3)
 
+        self.temper_init_spin.setMaximum(100)
+        self.temper_end_spin.setMaximum(100)
+
         # Bottom layout
         self.form_container1 = QGroupBox()
         self.form_layout1 = QFormLayout()
 
         self.iteration_spin = QSpinBox()
         self.iteration_spin.setMinimum(0)
-        self.iteration_spin.setMaximum(1000)
+        self.iteration_spin.setMaximum(100000)
         self.iteration_spin.setValue(200)
 
         self.beta_spin = QSpinBox()
