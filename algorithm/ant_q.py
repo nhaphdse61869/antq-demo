@@ -61,7 +61,7 @@ class AntQ(QThread):
     def createAnts(self):
         self.ants = []
         nodes = list(range(0, self.graph.num_node))
-        starting_nodes = np.random.choice(nodes, self.number_of_ants)
+        starting_nodes = np.random.choice(nodes, self.number_of_ants, replace=True)
         for i in range(0, self.number_of_ants):
             ant = Ant(i, self, starting_nodes[i], self.q0)
             self.ants.append(ant)
