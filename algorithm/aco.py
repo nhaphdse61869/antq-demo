@@ -1,5 +1,6 @@
 import random
 import sys
+import traceback
 import math
 from PyQt5.QtCore import QThread, pyqtSignal
 
@@ -127,7 +128,9 @@ class _Ant(object):
                 probabilities[i] = self.graph.pheromone[self.current][i] ** self.colony.alpha * \
                     self.eta[self.current][i] ** self.colony.beta / denominator
             except ValueError:
-                pass  # do nothing
+                pass
+            except:
+                traceback.print_exc()  # do nothing
         # select next node by probability roulette
         selected = 0
         rand = random.random()

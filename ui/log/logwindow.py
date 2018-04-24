@@ -152,12 +152,11 @@ class LogWindow(QWidget):
 
                 # Init algorithm
                 for i in range(len(self.list_selected_log)):
-                    logs_algorithm[i] = self.list_selected_log[i].algorithm + " 1"
+                    logs_algorithm[i] = self.list_selected_log[i].algorithm + " " + str(1)
                     type_of_algorithm[self.list_selected_log[i].algorithm] = 0
 
                 log_algorithms.append(logs_algorithm[0])
-                logs_algorithm_index.append(0)
-                type_of_algorithm[logs_algorithm[0]] = 1
+                type_of_algorithm[self.list_selected_log[0].algorithm] = 1
 
                 # Check algorithm
                 for i in range(1, len(self.list_selected_log)):

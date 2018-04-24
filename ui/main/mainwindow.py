@@ -117,7 +117,6 @@ class MainWindow(QWidget):
     def checkGoogleTab(self, pos):
         if pos == 1:
             self.googleWP.log_panel.loadListLog()
-            print(1)
             self.rightLayout.setCurrentIndex(1)
         else:
             self.rightLayout.setCurrentIndex(0)
@@ -141,7 +140,6 @@ class MainWindow(QWidget):
             self.algorithm = "ACO"
 
     def openFileDialog(self):
-        print("D")
         open = OpenFileDialog(self.list_point, self.dist_matrix, self.numMarker, self.graph, self.gmap)
         open.show()
         self.dist_matrix = open.dist_matrix
@@ -150,8 +148,6 @@ class MainWindow(QWidget):
         self.graphWP.aco_tab.num_agent_slider.changeMax(open.numMarker)
         self.graphWP.antq_tab.num_agent_slider.changeMax(open.numMarker)
         self.numMarker = open.numMarker
-        print(self.dist_matrix)
-        print(self.list_point)
 
     def valuechange(self, label):
         size = self.value()
@@ -169,7 +165,7 @@ class MainWindow(QWidget):
             self.graphWP.param_layout.addRow(QLabel("Number of agent: "), QLabel(str(self.numAgents)))
             self.graphWP.param_layout.addRow(QLabel("Learning rate: "), QLabel(str(self.LR)))
             self.graphWP.param_layout.addRow(QLabel("Discount factor: "), QLabel(str(self.DF)))
-            self.graphWP.param_layout.addRow(QLabel("Balance Rate: "), QLabel(str(self.BR)))
+            self.graphWP.param_layout.addRow(QLabel("Balance rate: "), QLabel(str(self.BR)))
             self.graphWP.param_layout.addRow(QLabel("Delta: "), QLabel(str(self.delta)))
             self.graphWP.param_layout.addRow(QLabel("Beta: "), QLabel(str(self.beta)))
             dr = "Iter"
@@ -181,10 +177,9 @@ class MainWindow(QWidget):
             self.graphWP.param_layout.addRow(QLabel("Number of cluster: "), QLabel(str(self.k_number)))
             self.graphWP.param_layout.addRow(QLabel("Number of iteration: "), QLabel(str(self.Ite)))
             self.graphWP.param_layout.addRow(QLabel("Number of agent: "), QLabel(str(self.numAgents)))
-            self.graphWP.param_layout.addRow(QLabel("Learning rate: "), QLabel(str(self.LR)))
-            self.graphWP.param_layout.addRow(QLabel("Discount factor: "), QLabel(str(self.DF)))
-            self.graphWP.param_layout.addRow(QLabel("Balance Rate: "), QLabel(str(self.BR)))
-            self.graphWP.param_layout.addRow(QLabel("Delta: "), QLabel(str(self.delta)))
+            self.graphWP.param_layout.addRow(QLabel("Residual coefficient: "), QLabel(str(self.LR)))
+            self.graphWP.param_layout.addRow(QLabel("Intensity: "), QLabel(str(self.DF)))
+            self.graphWP.param_layout.addRow(QLabel("Alpha: "), QLabel(str(self.delta)))
             self.graphWP.param_layout.addRow(QLabel("Beta: "), QLabel(str(self.beta)))
         elif self.algorithm == "Simulated Annealing":
             self.graphWP.param_layout.addRow(QLabel("Algorithm: "), QLabel("ACO"))
@@ -225,7 +220,6 @@ class MainWindow(QWidget):
                     self.Ite = self.graphWP.aco_tab.iteration_spin.value()
                     self.LR = self.graphWP.aco_tab.learning_rate_spin.value()
                     self.DF = self.graphWP.aco_tab.discount_factor_spin.value()
-                    self.BR = self.graphWP.aco_tab.balance_rate_spin.value()
                     self.numAgents = self.graphWP.aco_tab.num_agent_slider.k
                     self.k_number = 1
                     self.showCurrentParameter()
@@ -259,7 +253,7 @@ class MainWindow(QWidget):
                     # Create AntQ with Clustering
                     self.algEx = AntQClustering(self.list_point, self.dist_matrix, self.k_number, self.numAgents,
                                                 self.Ite, self.LR / 100, self.DF / 100, self.delta,
-                                                self.beta, global_best=self.global_best, result_queue=self.algorithm_result)
+                                                self.beta, q0=self.BR / 100, global_best=self.global_best, result_queue=self.algorithm_result)
                 except:
                     traceback.print_exc()
 
@@ -268,7 +262,7 @@ class MainWindow(QWidget):
                     # Create ACO
                     self.algGraphEx = ACOGraph(self.dist_matrix, len(self.dist_matrix))
                     self.algEx = ACO(self.numAgents, self.Ite, self.algGraphEx,
-                                         self.delta, self.beta, self.LR / 100, self.DF / 100, 1,
+                                         self.delta, self.beta, self.LR / 100, self.DF / 100, 2,
                                          result_queue=self.algorithm_result)
                 except:
                     traceback.print_exc()
@@ -299,7 +293,6 @@ class MainWindow(QWidget):
                     best_tour = result["best_tour"]
                     if self.algorithm == "AntQ" or self.algorithm == "ACO":
                         iter_avg = result["iter_avg"]
-                        iter_variance = result["iter_variance"]
                         iter_deviation = result["iter_deviation"]
                         # Draw chart
                         if iteration == 0:
@@ -328,12 +321,9 @@ class MainWindow(QWidget):
                             self.graphWP.best_length_chart.updateNewestLine(iteration, best_tour_len)
 
                     # Draw Graph
-                    print("Iteration : {}".format(iteration))
-                    print("what is hell {} - {}".format(prev_best_length, best_tour_len))
                     if prev_best_length > best_tour_len:
                         prev_best_length = best_tour_len
                         self.graph.updateClusterGraph(best_tour)
-
                 else:
                     self.save_log_signal.emit()
                     break
@@ -367,6 +357,7 @@ class MainWindow(QWidget):
                 parameter["number_of_agent"] = self.numAgents
                 parameter["learnning_rate"] = self.LR / 100
                 parameter["discount_factor"] = self.DF / 100
+                parameter["balance_rate"] = self.BR / 100
                 parameter["delta"] = self.delta
                 parameter["beta"] = self.beta
                 result["clusters_point"] = self.algEx.clusters_point
@@ -387,9 +378,9 @@ class MainWindow(QWidget):
                 algorithm = "ACO"
                 parameter["number_of_iteration"] = self.Ite
                 parameter["number_of_agent"] = self.numAgents
-                parameter["learnning_rate"] = self.LR / 100
-                parameter["discount_factor"] = self.DF / 100
-                parameter["delta"] = self.delta
+                parameter["residual_coefficient"] = self.LR / 100
+                parameter["intensity"] = self.DF / 100
+                parameter["alpha"] = self.delta
                 parameter["beta"] = self.beta
                 result["clusters_point"] = self.algEx.clusters_point
                 result["best_tour"] = [self.algEx.best_tour]
@@ -599,7 +590,6 @@ class OpenFileDialog(QWidget):
             self.graph.draw_graph()
 
     def openAtspFileNameDialog(self):
-        print("D")
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         fileName, _ = QFileDialog.getOpenFileName(self, "Open File", "",
@@ -632,14 +622,12 @@ class OpenFileDialog(QWidget):
 
                 elif fileName.lower().endswith('.json'):
                     self.is_googlemap = True
-                    print("D")
                     # Reader tsp file
                     reader = GMapDataReader(fileName.strip())
                     self.listMarker = reader.cities_tups
                     self.numMarker = len(self.listMarker)
                     self.dist_matrix = reader.dist_matrix
                     self.list_address = reader.list_address
-                    print("D")
                     # Draw graph
                     try:
                         self.graph.initCoordData(self.listMarker)

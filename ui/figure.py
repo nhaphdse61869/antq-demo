@@ -83,9 +83,6 @@ class AnimationGraphCanvas(FigureCanvas):
             clusters_list_y = []
             clusters_color = []
             self.draw_done = False
-
-            print(clusters_best_tour)
-
             for cluster_number in range(len(clusters_best_tour)):
                 # Get cluster color
                 c = self.scatter.to_rgba(cluster_number)

@@ -105,7 +105,6 @@ class LogIO:
 
         # Write log file
         f = open(self.log_filename, "a+")
-        print(log_json)
         json.dump(log_json, f)
         f.write("\n")
         f.close()

@@ -95,9 +95,7 @@ class SimAnneal(QThread):
         """
         Execute simulated annealing algorithm
         """
-        print("Start nào")
         while self.T >= self.stopping_temperature and self.iteration <= self.stopping_iter:
-            print("Iteration thứ {}".format(self.iteration))
             candidate = list(self.cur_solution)
             l = random.randint(2, self.N - 1)
             i = random.randint(0, self.N - l)
