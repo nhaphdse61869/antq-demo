@@ -26,16 +26,16 @@ class ATSPReader:
         self.dimension = int(self.dimension)
         number_of_distance = 0
         distance_data = []
-        #Convert to dist matrix
+
+        #Read distance data
         for item in data:
             row_distance = item.split()
             if len(row_distance) > 0 and row_distance[0].isdigit():
-                number_of_distance = number_of_distance + len(row_distance)
                 distance_data.extend(row_distance)
-                if number_of_distance >= int(self.dimension):
-                    self.dist_matrix.append(distance_data)
-                    number_of_distance = 0
-                    distance_data = []
+
+        #Convert to dist matrix
+        for i in range(self.dimension):
+            self.dist_matrix.append(distance_data[self.dimension*i:self.dimension*(i+1)])
 
         #Convert string to float
         for i in range(len(self.dist_matrix)):

@@ -628,6 +628,7 @@ class OpenTSPFileDialog(QWidget):
                     qm = QMessageBox
                     qm.critical(self.parent(), "", "Wrong file!")
             except:
+                traceback.print_exc()
                 self.visualize_graph.clearGraph()
                 self.list_point = []
                 self.dist_matrix = []
