@@ -18,7 +18,7 @@ class ACOGraph(object):
 
 class ACO(QThread):
     run_finished = pyqtSignal()
-    def __init__(self, ant_count, generations, graph, alpha, beta, rho, q, strategy, result_queue=None):
+    def __init__(self, ant_count, generations, graph, alpha, beta, rho, q, strategy=2, result_queue=None):
         """
         :param ant_count:
         :param generations:
@@ -38,9 +38,12 @@ class ACO(QThread):
         self.ant_count = ant_count
         self.generations = generations
         self.update_strategy = strategy
+
+        self.global_best_tour_len = sys.maxsize
+        self.global_best_tour = []
         self.result_queue = result_queue
-        self.best_tour = []
-        self.best_tour_len = sys.maxsize
+        self.iter_best_tour = []
+        self.iter_best_tour_len = sys.maxsize
         self.list_best_tour = []
         self.list_best_len = []
         self.list_avg = []
@@ -82,18 +85,25 @@ class ACO(QThread):
     def run(self):
         for gen in range(self.generations):
             iter_best_tour, iter_best_len, iter_avg, iter_variance, iter_deviation = self.iterRun()
-            self.best_tour_len = iter_best_len
-            self.best_tour = iter_best_tour
+
+
+            self.iter_best_tour_len = iter_best_len
+            self.iter_best_tour = iter_best_tour
+
+            if self.global_best_tour_len > self.iter_best_tour_len:
+                self.global_best_tour_len = self.iter_best_tour_len
+                self.global_best_tour = self.iter_best_tour
+
             aIter_result = {}
             aIter_result["iteration"] = gen
-            aIter_result["best_tour_len"] = self.best_tour_len
-            aIter_result["best_tour"] = self.best_tour.copy()
+            aIter_result["best_tour_len"] = self.global_best_tour_len
+            aIter_result["best_tour"] = self.global_best_tour.copy()
             aIter_result["iter_avg"] = iter_avg
             aIter_result["iter_variance"] = iter_variance
             aIter_result["iter_deviation"] = iter_deviation
             self.result_queue.put(aIter_result)
-            self.list_best_tour.append(self.best_tour)
-            self.list_best_len.append(self.best_tour_len)
+            self.list_best_tour.append(self.global_best_tour)
+            self.list_best_len.append(self.global_best_tour_len)
             self.list_avg.append(iter_avg)
             self.list_var.append(iter_variance)
             self.list_dev.append(iter_deviation)

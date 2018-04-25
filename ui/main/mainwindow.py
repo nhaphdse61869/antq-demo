@@ -16,7 +16,7 @@ from algorithm.cluster_antq import AntQClustering
 from algorithm.sa import SimAnneal
 from qgmap.common import QGoogleMap
 from ui.figure import AnimationGraphCanvas
-from ui.main.wp_googlemap import GoogleWP
+from ui.main.wp_googlemap import GoogleMapWP
 from ui.main.wp_graph import GraphWP
 from util.dataset import TSPFileReader, ATSPReader, GMapDataReader
 from util.log import LogIO, Log
@@ -29,43 +29,57 @@ class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
 
-        # Algorithm default parameters
-        self.global_best = True
-        self.k_number = 1
-        self.curTab = 0
-        self.delta = 1
-        self.beta = 2
-        self.Ite = 200
-        self.numAgents = 2
-        self.LR = 10
-        self.DF = 30
-        self.BR = 90
-        self.T_0 = 0
-        self.T_min = 0
-        self.algorithm = "AntQ"
+        # General Parameters
+        self.current_algorithm_tab = 0
+        self.current_algorithm = "AntQ"
+        self.number_of_cluster = 1
+
+        # Antq parameters
+        self.antq_global_best = True
+        self.antq_delta = 1
+        self.antq_beta = 2
+        self.antq_number_of_iteration = 200
+        self.antq_number_of_agent = 2
+        self.antq_learning_rate = 0.1
+        self.antq_discount_factor = 0.3
+        self.antq_balance_rate = 0.9
+
+        # ACO parameters
+        self.aco_number_of_iteration = 200
+        self.aco_number_of_agent = 1
+        self.aco_residual_coefficient = 1
+        self.aco_intensity = 1
+        self.aco_beta = 1
+        self.aco_alpha = 2
+
+        #SA parameters
+        self.sa_beta = 1
+        self.sa_T0 = 100
+        self.sa_T_min = 0
+        self.sa_number_of_iteration = 200
 
         # Graph parameter
         self.best_tour = []
         self.list_point = []
         self.dist_matrix = []
         self.list_address = []
-        self.numMarker = 0
         self.log_io = LogIO()
-        self.logging = None
-        self.algEx = None
+        self.result_log = None
+        self.algorithm_thread = None
 
         # Google map parameter
         self.google_map_selected_log = None
 
+        # Initial Main Window
         # Main layout
-        self.mainLayout = QHBoxLayout(self)
+        self.main_layout = QHBoxLayout(self)
         self.setGeometry(0, 40, 0, 0)
         self.resize(2600, 0)
 
         # Left layout
-        self.leftLayout = QTabWidget()
-        self.tabGM = QWidget()
-        self.tabGraph = QWidget()
+        self.left_layout = QTabWidget()
+        self.google_map_tab = QWidget()
+        self.graph_tab = QWidget()
 
         # Google Maps container
         self.gmap = QGoogleMap(self)
@@ -77,170 +91,181 @@ class MainWindow(QWidget):
         # Center at HCM city
         self.gmap.centerAt(10.857200, 106.628487)
 
-        self.tabGM.layout = QVBoxLayout()
-        self.tabGM.setLayout(self.tabGM.layout)
-        self.tabGM.layout.addWidget(self.gmap)
+        self.google_map_tab.layout = QVBoxLayout()
+        self.google_map_tab.setLayout(self.google_map_tab.layout)
+        self.google_map_tab.layout.addWidget(self.gmap)
 
         # Graph
         self.graph = AnimationGraphCanvas()
-        self.tabGraph.layout = QVBoxLayout()
-        self.tabGraph.setLayout(self.tabGraph.layout)
-        self.tabGraph.layout.addWidget(self.graph)
-        self.tabGraph.layout.setSpacing(0)
+        self.graph_tab.layout = QVBoxLayout()
+        self.graph_tab.setLayout(self.graph_tab.layout)
+        self.graph_tab.layout.addWidget(self.graph)
+        self.graph_tab.layout.setSpacing(0)
 
-        self.leftLayout.addTab(self.tabGraph, "Graph")
-        self.leftLayout.addTab(self.tabGM, "Google Map")
-
-        self.leftLayout.tabBarClicked.connect(self.checkGoogleTab)
+        self.left_layout.addTab(self.graph_tab, "Graph")
+        self.left_layout.addTab(self.google_map_tab, "Google Map")
 
         # Right layout
-        self.rightLayout = QStackedWidget(self)
-        self.graphWP = GraphWP()
-        self.googleWP = GoogleWP()
+        self.right_layout = QStackedWidget(self)
+        self.graph_WP = GraphWP()
+        self.google_map_WP = GoogleMapWP()
 
-        self.rightLayout.addWidget(self.graphWP)
-        self.rightLayout.addWidget(self.googleWP)
-
-        self.graphWP.run_button.clicked.connect(self.runAlgorithm)
-        self.graphWP.apply_button.clicked.connect(self.applyPara)
-        self.graphWP.generate_button.clicked.connect(self.openFileDialog)
-        self.graphWP.algorithm_tabs.tabBarClicked.connect(self.checkCurrentTab)
-        self.googleWP.show_route_button.clicked.connect(self.run_google_map_log)
-        self.googleWP.route_table.cluster_combobox.currentIndexChanged.connect(self.google_map_change_cluster)
+        self.right_layout.addWidget(self.graph_WP)
+        self.right_layout.addWidget(self.google_map_WP)
 
         # Add to main layout
-        self.mainLayout.addWidget(self.leftLayout)
-        self.mainLayout.addWidget(self.rightLayout)
+        self.main_layout.addWidget(self.left_layout)
+        self.main_layout.addWidget(self.right_layout)
+
+        # Connect signals
         self.save_log_signal.connect(self.saveLog)
+        self.left_layout.tabBarClicked.connect(self.checkGoogleTab)
+        self.graph_WP.run_button.clicked.connect(self.runAlgorithm)
+        self.graph_WP.apply_button.clicked.connect(self.applyParameter)
+        self.graph_WP.generate_button.clicked.connect(self.openFileDialog)
+        self.graph_WP.algorithm_tabs.tabBarClicked.connect(self.checkCurrentTab)
+        self.google_map_WP.show_route_button.clicked.connect(self.runLogGoogleMap)
+        self.google_map_WP.route_table.cluster_combobox.currentIndexChanged.connect(self.changeClusterGoogleMap)
+
+        #Show current parameter
         self.showCurrentParameter()
 
     def checkGoogleTab(self, pos):
         if pos == 1:
-            self.googleWP.log_panel.loadListLog()
-            self.rightLayout.setCurrentIndex(1)
+            self.google_map_WP.log_panel.loadListLog()
+            self.right_layout.setCurrentIndex(1)
         else:
-            self.rightLayout.setCurrentIndex(0)
+            self.right_layout.setCurrentIndex(0)
 
     def checkCurrentTab(self, pos):
-        self.curTab = pos
+        self.current_algorithm_tab = pos
         if pos == 2:
             try:
-                self.graphWP.chart_tabs.removeTab(2)
-                self.graphWP.chart_tabs.removeTab(1)
-                self.algorithm = "Simulated Annealing"
+                self.graph_WP.chart_tabs.removeTab(2)
+                self.graph_WP.chart_tabs.removeTab(1)
+                self.current_algorithm = "Simulated Annealing"
             except:
                 traceback.print_exc()
-        elif self.graphWP.chart_tabs.count() == 1 and pos == 0 :
-            self.graphWP.chart_tabs.addTab(self.graphWP.chart2_tab, "Mean Length")
-            self.graphWP.chart_tabs.addTab(self.graphWP.chart3_tab, "Variance Length")
-            self.algorithm = "AntQ"
-        elif self.graphWP.chart_tabs.count() == 1 and pos == 1 :
-            self.graphWP.chart_tabs.addTab(self.graphWP.chart2_tab, "Mean Length")
-            self.graphWP.chart_tabs.addTab(self.graphWP.chart3_tab, "Variance Length")
-            self.algorithm = "ACO"
+        elif self.graph_WP.chart_tabs.count() == 1 and pos == 0 :
+            self.graph_WP.chart_tabs.addTab(self.graph_WP.chart2_tab, "Mean Length")
+            self.graph_WP.chart_tabs.addTab(self.graph_WP.chart3_tab, "Variance Length")
+            self.current_algorithm = "AntQ"
+        elif self.graph_WP.chart_tabs.count() == 1 and pos == 1 :
+            self.graph_WP.chart_tabs.addTab(self.graph_WP.chart2_tab, "Mean Length")
+            self.graph_WP.chart_tabs.addTab(self.graph_WP.chart3_tab, "Variance Length")
+            self.current_algorithm = "ACO"
 
     def openFileDialog(self):
-        open = OpenFileDialog(self.list_point, self.dist_matrix, self.numMarker, self.graph, self.gmap)
-        open.show()
-        self.dist_matrix = open.dist_matrix
-        self.list_point = open.listMarker
-        self.list_address = open.list_address
-        self.graphWP.aco_tab.num_agent_slider.changeMax(open.numMarker)
-        self.graphWP.antq_tab.num_agent_slider.changeMax(open.numMarker)
-        self.numMarker = open.numMarker
+        try:
+            open = OpenTSPFileDialog(visualize_graph=self.graph)
+            open.show()
 
-    def valuechange(self, label):
-        size = self.value()
-        label.setFont(QFont("Arial", size))
+            # Get data
+            self.dist_matrix = open.dist_matrix
+            self.list_point = open.list_point
+            self.list_address = open.list_address
+            self.graph_WP.aco_tab.num_agent_slider.changeMax(len(self.list_point))
+            self.graph_WP.antq_tab.num_agent_slider.changeMax(len(self.list_point))
+        except:
+            traceback.print_exc()
 
     def showCurrentParameter(self):
-        for i in range(self.graphWP.param_layout.count()):
-            self.graphWP.param_layout.removeRow(0)
-        self.graphWP.param_layout.update()
+        # Clear layout
+        for i in range(self.graph_WP.param_layout.count()):
+            self.graph_WP.param_layout.removeRow(0)
+        self.graph_WP.param_layout.update()
 
-        if self.algorithm == "AntQ":
-            self.graphWP.param_layout.addRow(QLabel("Algorithm: "), QLabel("AntQ"))
-            self.graphWP.param_layout.addRow(QLabel("Number of cluster: "), QLabel(str(self.k_number)))
-            self.graphWP.param_layout.addRow(QLabel("Number of iteration: "), QLabel(str(self.Ite)))
-            self.graphWP.param_layout.addRow(QLabel("Number of agent: "), QLabel(str(self.numAgents)))
-            self.graphWP.param_layout.addRow(QLabel("Learning rate: "), QLabel(str(self.LR)))
-            self.graphWP.param_layout.addRow(QLabel("Discount factor: "), QLabel(str(self.DF)))
-            self.graphWP.param_layout.addRow(QLabel("Balance rate: "), QLabel(str(self.BR)))
-            self.graphWP.param_layout.addRow(QLabel("Delta: "), QLabel(str(self.delta)))
-            self.graphWP.param_layout.addRow(QLabel("Beta: "), QLabel(str(self.beta)))
+        # Show AntQ Parameter
+        if self.current_algorithm == "AntQ":
+            self.graph_WP.param_layout.addRow(QLabel("Algorithm: "), QLabel("AntQ"))
+            self.graph_WP.param_layout.addRow(QLabel("Number of cluster: "), QLabel(str(self.number_of_cluster)))
+            self.graph_WP.param_layout.addRow(QLabel("Number of iteration: "), QLabel(str(self.antq_number_of_iteration)))
+            self.graph_WP.param_layout.addRow(QLabel("Number of agent: "), QLabel(str(self.antq_number_of_agent)))
+            self.graph_WP.param_layout.addRow(QLabel("Learning rate: "), QLabel(str(self.antq_learning_rate)))
+            self.graph_WP.param_layout.addRow(QLabel("Discount factor: "), QLabel(str(self.antq_discount_factor)))
+            self.graph_WP.param_layout.addRow(QLabel("Balance rate: "), QLabel(str(self.antq_balance_rate)))
+            self.graph_WP.param_layout.addRow(QLabel("Delta: "), QLabel(str(self.antq_delta)))
+            self.graph_WP.param_layout.addRow(QLabel("Beta: "), QLabel(str(self.antq_beta)))
             dr = "Iter"
-            if self.global_best:
+            if self.antq_global_best:
                 dr = "Global"
-            self.graphWP.param_layout.addRow(QLabel("DR: "), QLabel(dr))
-        elif self.algorithm == "ACO":
-            self.graphWP.param_layout.addRow(QLabel("Algorithm: "), QLabel("ACO"))
-            self.graphWP.param_layout.addRow(QLabel("Number of cluster: "), QLabel(str(self.k_number)))
-            self.graphWP.param_layout.addRow(QLabel("Number of iteration: "), QLabel(str(self.Ite)))
-            self.graphWP.param_layout.addRow(QLabel("Number of agent: "), QLabel(str(self.numAgents)))
-            self.graphWP.param_layout.addRow(QLabel("Residual coefficient: "), QLabel(str(self.LR)))
-            self.graphWP.param_layout.addRow(QLabel("Intensity: "), QLabel(str(self.DF)))
-            self.graphWP.param_layout.addRow(QLabel("Alpha: "), QLabel(str(self.delta)))
-            self.graphWP.param_layout.addRow(QLabel("Beta: "), QLabel(str(self.beta)))
-        elif self.algorithm == "Simulated Annealing":
-            self.graphWP.param_layout.addRow(QLabel("Algorithm: "), QLabel("ACO"))
-            self.graphWP.param_layout.addRow(QLabel("Number of cluster: "), QLabel(str(self.k_number)))
-            self.graphWP.param_layout.addRow(QLabel("Number of iteration: "), QLabel(str(self.Ite)))
-            self.graphWP.param_layout.addRow(QLabel("Beta: "), QLabel(str(self.delta)))
-            self.graphWP.param_layout.addRow(QLabel("T_0: "), QLabel(str(self.T_0)))
-            self.graphWP.param_layout.addRow(QLabel("T_min: "), QLabel(str(self.T_min)))
+            self.graph_WP.param_layout.addRow(QLabel("DR: "), QLabel(dr))
 
-    def applyPara(self):
+        # Show ACO Parameter
+        elif self.current_algorithm == "ACO":
+            self.graph_WP.param_layout.addRow(QLabel("Algorithm: "), QLabel("ACO"))
+            self.graph_WP.param_layout.addRow(QLabel("Number of cluster: "), QLabel(str(self.number_of_cluster)))
+            self.graph_WP.param_layout.addRow(QLabel("Number of iteration: "), QLabel(str(self.aco_number_of_iteration)))
+            self.graph_WP.param_layout.addRow(QLabel("Number of agent: "), QLabel(str(self.aco_number_of_agent)))
+            self.graph_WP.param_layout.addRow(QLabel("Residual coefficient: "), QLabel(str(self.aco_residual_coefficient)))
+            self.graph_WP.param_layout.addRow(QLabel("Intensity: "), QLabel(str(self.aco_intensity)))
+            self.graph_WP.param_layout.addRow(QLabel("Alpha: "), QLabel(str(self.aco_alpha)))
+            self.graph_WP.param_layout.addRow(QLabel("Beta: "), QLabel(str(self.aco_beta)))
+
+        # Show SA Parameter
+        elif self.current_algorithm == "Simulated Annealing":
+            self.graph_WP.param_layout.addRow(QLabel("Algorithm: "), QLabel("SA"))
+            self.graph_WP.param_layout.addRow(QLabel("Number of cluster: "), QLabel(str(self.number_of_cluster)))
+            self.graph_WP.param_layout.addRow(QLabel("Number of iteration: "), QLabel(str(self.sa_number_of_iteration)))
+            self.graph_WP.param_layout.addRow(QLabel("Beta: "), QLabel(str(self.sa_beta)))
+            self.graph_WP.param_layout.addRow(QLabel("T_0: "), QLabel(str(self.sa_T0)))
+            self.graph_WP.param_layout.addRow(QLabel("T_min: "), QLabel(str(self.sa_T_min)))
+
+    def applyParameter(self):
         try:
             qm = QMessageBox()
             reply = qm.question(self, 'Message',
                                 'Do you want to apply new parameter?', QMessageBox.Ok, QMessageBox.Cancel)
+
             if reply == QMessageBox.Ok:
-                self.reset_graph()
-                if self.curTab == 0:
-                    self.algorithm = "AntQ"
-                    self.delta = self.graphWP.antq_tab.delta_spin.value()
-                    self.beta = self.graphWP.antq_tab.beta_spin.value()
-                    self.Ite = self.graphWP.antq_tab.iteration_spin.value()
-                    self.LR = self.graphWP.antq_tab.learning_rate_spin.value()
-                    self.DF = self.graphWP.antq_tab.discount_factor_spin.value()
-                    self.BR = self.graphWP.antq_tab.balance_rate_spin.value()
-                    self.numAgents = self.graphWP.antq_tab.num_agent_slider.k
-                    self.k_number = self.graphWP.antq_tab.k_num_spin.value()
-                    if self.k_number < 2:
-                        self.k_number = 1
-                    dr = self.graphWP.antq_tab.dr_combobox.currentIndex()
-                    self.global_best = True
+                self.number_of_cluster = 1
+                # Apply AntQ parameter
+                if self.current_algorithm_tab == 0:
+                    self.current_algorithm = "AntQ"
+                    self.antq_delta = self.graph_WP.antq_tab.delta_spin.value()
+                    self.antq_beta = self.graph_WP.antq_tab.beta_spin.value()
+                    self.antq_number_of_iteration = self.graph_WP.antq_tab.iteration_spin.value()
+                    self.antq_learning_rate = self.graph_WP.antq_tab.learning_rate_spin.value() / 100
+                    self.antq_discount_factor = self.graph_WP.antq_tab.discount_factor_spin.value() / 100
+                    self.antq_balance_rate = self.graph_WP.antq_tab.balance_rate_spin.value() / 100
+                    self.antq_number_of_agent = self.graph_WP.antq_tab.num_agent_slider.k
+                    self.number_of_cluster = self.graph_WP.antq_tab.k_num_spin.value()
+                    dr = self.graph_WP.antq_tab.dr_combobox.currentIndex()
+                    self.antq_global_best = True
                     if dr == 0:
-                        self.global_best = False
-                    self.showCurrentParameter()
-                elif self.curTab == 1:
-                    self.algorithm = "ACO"
-                    self.delta = self.graphWP.aco_tab.delta_spin.value()
-                    self.beta = self.graphWP.aco_tab.beta_spin.value()
-                    self.Ite = self.graphWP.aco_tab.iteration_spin.value()
-                    self.LR = self.graphWP.aco_tab.learning_rate_spin.value()
-                    self.DF = self.graphWP.aco_tab.discount_factor_spin.value()
-                    self.numAgents = self.graphWP.aco_tab.num_agent_slider.k
-                    self.k_number = 1
-                    self.showCurrentParameter()
-                elif self.curTab == 2:
-                    self.algorithm = "Simulated Annealing"
-                    self.T_0 = self.graphWP.sa_tab.temper_init_spin.value()
-                    self.T_min = self.graphWP.sa_tab.temper_end_spin.value()
-                    self.beta = self.graphWP.sa_tab.beta_spin.value()
-                    self.Ite = self.graphWP.sa_tab.iteration_spin.value()
-                    self.k_number = 1
-                    self.showCurrentParameter()
+                        self.antq_global_best = False
+
+                # Apply ACO parameter
+                elif self.current_algorithm_tab == 1:
+                    self.current_algorithm = "ACO"
+                    self.aco_alpha = self.graph_WP.aco_tab.alpha_spin.value()
+                    self.aco_beta = self.graph_WP.aco_tab.beta_spin.value()
+                    self.aco_number_of_iteration = self.graph_WP.aco_tab.iteration_spin.value()
+                    self.aco_residual_coefficient = self.graph_WP.aco_tab.residual_coefficient_spin.value() / 100
+                    self.aco_intensity = self.graph_WP.aco_tab.intensity_spin.value() / 100
+                    self.aco_number_of_agent = self.graph_WP.aco_tab.num_agent_slider.k
+
+                # Apply SA Parameter
+                elif self.current_algorithm_tab == 2:
+                    self.current_algorithm = "Simulated Annealing"
+                    self.sa_T0 = self.graph_WP.sa_tab.temper_init_spin.value()
+                    self.sa_T_min = self.graph_WP.sa_tab.temper_end_spin.value()
+                    self.sa_beta = self.graph_WP.sa_tab.beta_spin.value() / 100
+                    self.sa_number_of_iteration = self.graph_WP.sa_tab.iteration_spin.value()
+
+                self.resetGraph()
+                self.showCurrentParameter()
         except:
             (type, value, traceback) = sys.exc_info()
             sys.excepthook(type, value, traceback)
 
     # Implement Algorithm
     def runAlgorithm(self):
-        if self.numMarker < 2:
+        if len(self.list_point) < 2:
             qm = QMessageBox
             qm.information(self,"", "Atleast two points!")
         else :
+            # Start draw chart thread
             self.algorithm_result = Queue()
             try:
                 self.result_handler = Thread(target=self.drawChart)
@@ -248,36 +273,53 @@ class MainWindow(QWidget):
             except:
                 traceback.print_exc()
 
-            if self.algorithm == "AntQ":
+            # Initial AntQ Algorithm
+            if self.current_algorithm == "AntQ":
                 try:
-                    # Create AntQ with Clustering
-                    self.algEx = AntQClustering(self.list_point, self.dist_matrix, self.k_number, self.numAgents,
-                                                self.Ite, self.LR / 100, self.DF / 100, self.delta,
-                                                self.beta, q0=self.BR / 100, global_best=self.global_best, result_queue=self.algorithm_result)
+                    self.algorithm_thread = AntQClustering(self.list_point, self.dist_matrix,
+                                                           self.number_of_cluster,
+                                                           self.antq_number_of_agent,
+                                                           self.antq_number_of_iteration,
+                                                           self.antq_learning_rate,
+                                                           self.antq_discount_factor,
+                                                           self.antq_delta,
+                                                           self.antq_beta,
+                                                           q0=self.antq_balance_rate,
+                                                           global_best=self.antq_global_best, result_queue=self.algorithm_result)
                 except:
                     traceback.print_exc()
 
-            elif self.algorithm == "ACO":
+            # Initial ACO Algorithm
+            elif self.current_algorithm == "ACO":
                 try:
-                    # Create ACO
-                    self.algGraphEx = ACOGraph(self.dist_matrix, len(self.dist_matrix))
-                    self.algEx = ACO(self.numAgents, self.Ite, self.algGraphEx,
-                                         self.delta, self.beta, self.LR / 100, self.DF / 100, 2,
-                                         result_queue=self.algorithm_result)
+                    self.aco_graph = ACOGraph(self.dist_matrix, len(self.dist_matrix))
+                    self.algorithm_thread = ACO(self.aco_number_of_agent,
+                                                self.aco_number_of_iteration,
+                                                self.aco_graph,
+                                                self.aco_alpha,
+                                                self.aco_beta,
+                                                self.aco_residual_coefficient,
+                                                self.aco_intensity,
+                                                result_queue=self.algorithm_result)
                 except:
                     traceback.print_exc()
 
-            elif self.algorithm == "Simulated Annealing":
-                #Create Simulated Annealing
-                self.algEx = SimAnneal(self.dist_matrix, T=self.T_0, alpha=self.beta / 100,
-                                       stopping_T=self.T_min, stopping_iter=self.Ite, result_queue=self.algorithm_result)
+            # Initial SA Algorithm
+            elif self.current_algorithm == "Simulated Annealing":
+                self.algorithm_thread = SimAnneal(self.dist_matrix,
+                                                  T=self.sa_T0,
+                                                  alpha=self.sa_beta,
+                                                  stopping_T=self.sa_T_min,
+                                                  stopping_iter=self.sa_number_of_iteration,
+                                                  result_queue=self.algorithm_result)
 
-            #Create cluster
+            # Visualize cluster
             self.graph.clearGraph()
-            self.graph.updateCluster(self.algEx.clusters_point)
-            #Start algorithm
-            self.algEx.run_finished.connect(self.algorithmFinished)
-            self.algEx.start()
+            self.graph.updateCluster(self.algorithm_thread.clusters_point)
+
+            # Run algorithm
+            self.algorithm_thread.run_finished.connect(self.algorithmFinished)
+            self.algorithm_thread.start()
 
     def drawChart(self):
         try:
@@ -291,34 +333,34 @@ class MainWindow(QWidget):
                     iteration = result["iteration"]
                     best_tour_len = result["best_tour_len"]
                     best_tour = result["best_tour"]
-                    if self.algorithm == "AntQ" or self.algorithm == "ACO":
+                    if self.current_algorithm == "AntQ" or self.current_algorithm == "ACO":
                         iter_avg = result["iter_avg"]
                         iter_deviation = result["iter_deviation"]
                         # Draw chart
                         if iteration == 0:
                             pass
                             # add new lines
-                            self.graphWP.best_length_chart.addNewLine(iteration, best_tour_len)
-                            self.graphWP.mean_length_chart.addNewLine(iteration, iter_avg)
-                            self.graphWP.st_deviation_chart.addNewLine(iteration, iter_deviation)
+                            self.graph_WP.best_length_chart.addNewLine(iteration, best_tour_len)
+                            self.graph_WP.mean_length_chart.addNewLine(iteration, iter_avg)
+                            self.graph_WP.st_deviation_chart.addNewLine(iteration, iter_deviation)
                         else:
                             pass
                             # update lines
-                            self.graphWP.best_length_chart.updateNewestLine(iteration, best_tour_len)
-                            self.graphWP.mean_length_chart.updateNewestLine(iteration, iter_avg)
-                            self.graphWP.st_deviation_chart.updateNewestLine(iteration, iter_deviation)
-                        if self.algorithm == "ACO":
+                            self.graph_WP.best_length_chart.updateNewestLine(iteration, best_tour_len)
+                            self.graph_WP.mean_length_chart.updateNewestLine(iteration, iter_avg)
+                            self.graph_WP.st_deviation_chart.updateNewestLine(iteration, iter_deviation)
+                        if self.current_algorithm == "ACO":
                             best_tour = [best_tour]
-                    elif self.algorithm == "Simulated Annealing":
+                    elif self.current_algorithm == "Simulated Annealing":
                         # Simulated Annealing
                         best_tour = [best_tour]
                         # Draw chart
                         if iteration == 1:
                             # add new lines
-                            self.graphWP.best_length_chart.addNewLine(iteration, best_tour_len)
+                            self.graph_WP.best_length_chart.addNewLine(iteration, best_tour_len)
                         else:
                             # update lines
-                            self.graphWP.best_length_chart.updateNewestLine(iteration, best_tour_len)
+                            self.graph_WP.best_length_chart.updateNewestLine(iteration, best_tour_len)
 
                     # Draw Graph
                     if prev_best_length > best_tour_len:
@@ -339,82 +381,71 @@ class MainWindow(QWidget):
             number_of_point = len(self.list_point)
             created_date = '{0:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
             parameter = {}
-            parameter["number_of_cluster"] = self.k_number
+            parameter["number_of_cluster"] = self.number_of_cluster
             dataset = {}
             dataset["list_points"] = self.list_point
             dataset["distance_matrix"] = self.dist_matrix
             dataset["list_address"] = self.list_address
             result = {}
-            if self.algorithm == "AntQ":
+
+            if self.current_algorithm == "AntQ":
                 # AntQ
-                # Get all value
-                algorithm = "AntQ"
                 dr = "Iteration best"
-                if self.global_best:
+                if self.antq_global_best:
                     dr = "Global best"
                 parameter["delayed_reinforcement"] = dr
-                parameter["number_of_iteration"] = self.Ite
-                parameter["number_of_agent"] = self.numAgents
-                parameter["learnning_rate"] = self.LR / 100
-                parameter["discount_factor"] = self.DF / 100
-                parameter["balance_rate"] = self.BR / 100
-                parameter["delta"] = self.delta
-                parameter["beta"] = self.beta
-                result["clusters_point"] = self.algEx.clusters_point
-                result["best_tour"] = self.algEx.clusters_best_tour
-                result["best_length"] = self.algEx.best_len
-                result["list_iteration"] = list(range(self.Ite))
-                result["list_best_tour"] = self.algEx.list_clusters_best_tour
-                result["list_best_len"] = self.algEx.list_avg_best_length
-                result["list_avg"] = self.algEx.list_avg_mean_length
-                result["list_deviation"] = self.algEx.list_avg_dev
+                parameter["number_of_iteration"] = self.antq_number_of_iteration
+                parameter["number_of_agent"] = self.antq_number_of_agent
+                parameter["learnning_rate"] = self.antq_learning_rate
+                parameter["discount_factor"] = self.antq_discount_factor
+                parameter["balance_rate"] = self.antq_balance_rate
+                parameter["delta"] = self.antq_delta
+                parameter["beta"] = self.antq_beta
+                result["clusters_point"] = self.algorithm_thread.clusters_point
+                result["best_tour"] = self.algorithm_thread.clusters_best_tour
+                result["best_length"] = self.algorithm_thread.best_len
+                result["list_iteration"] = list(range(self.antq_number_of_iteration))
+                result["list_best_tour"] = self.algorithm_thread.list_clusters_best_tour
+                result["list_best_len"] = self.algorithm_thread.list_avg_best_length
+                result["list_avg"] = self.algorithm_thread.list_avg_mean_length
+                result["list_deviation"] = self.algorithm_thread.list_avg_dev
 
-                # Create log object
-                self.logging = Log(key=key, name=name, algorithm=algorithm, number_of_point=number_of_point,
-                                   created_date=created_date, parameter=parameter, dataset=dataset, result=result)
-            elif self.algorithm == "ACO":
+            elif self.current_algorithm == "ACO":
                 # ACO
-                # Get all value
-                algorithm = "ACO"
-                parameter["number_of_iteration"] = self.Ite
-                parameter["number_of_agent"] = self.numAgents
-                parameter["residual_coefficient"] = self.LR / 100
-                parameter["intensity"] = self.DF / 100
-                parameter["alpha"] = self.delta
-                parameter["beta"] = self.beta
-                result["clusters_point"] = self.algEx.clusters_point
-                result["best_tour"] = [self.algEx.best_tour]
-                result["best_length"] = self.algEx.best_tour_len
-                result["list_iteration"] = list(range(self.Ite))
-                result["list_best_tour"] = self.algEx.list_best_tour
-                result["list_best_len"] = self.algEx.list_best_len
-                result["list_avg"] = self.algEx.list_avg
-                result["list_deviation"] = self.algEx.list_dev
+                parameter["number_of_iteration"] = self.aco_number_of_iteration
+                parameter["number_of_agent"] = self.aco_number_of_agent
+                parameter["residual_coefficient"] = self.aco_residual_coefficient
+                parameter["intensity"] = self.aco_intensity
+                parameter["alpha"] = self.aco_alpha
+                parameter["beta"] = self.aco_beta
+                result["clusters_point"] = self.algorithm_thread.clusters_point
+                result["best_tour"] = [self.algorithm_thread.global_best_tour]
+                result["best_length"] = self.algorithm_thread.global_best_tour_len
+                result["list_iteration"] = list(range(self.aco_number_of_iteration))
+                result["list_best_tour"] = self.algorithm_thread.list_best_tour
+                result["list_best_len"] = self.algorithm_thread.list_best_len
+                result["list_avg"] = self.algorithm_thread.list_avg
+                result["list_deviation"] = self.algorithm_thread.list_dev
 
-                # Create log object
-                self.logging = Log(key=key, name=name, algorithm=algorithm, number_of_point=number_of_point,
-                                   created_date=created_date, parameter=parameter, dataset=dataset, result=result)
-            elif self.algorithm == "Simulated Annealing":
+            elif self.current_algorithm == "Simulated Annealing":
                 # Simulated Annealing
-                # Get all value
-                algorithm = "Simulated Annealing"
-                parameter["t0"] = self.T_0
-                parameter["t_min"] = self.T_min
-                parameter["beta"] = self.beta
-                parameter["number_of_iteration"] = self.Ite
-                result["clusters_point"] = self.algEx.clusters_point
-                result["best_tour"] = [self.algEx.best_tour]
-                result["best_length"] = self.algEx.best_tour_len
-                result["list_iteration"] = list(range(self.Ite))
-                result["list_best_tour"] = self.algEx.best_tours
-                result["list_best_len"] = self.algEx.best_lens
+                parameter["t0"] = self.sa_T0
+                parameter["t_min"] = self.sa_T_min
+                parameter["beta"] = self.sa_beta
+                parameter["number_of_iteration"] = self.sa_number_of_iteration
+                result["clusters_point"] = self.algorithm_thread.clusters_point
+                result["best_tour"] = [self.algorithm_thread.best_tour]
+                result["best_length"] = self.algorithm_thread.best_tour_len
+                result["list_iteration"] = list(range(self.sa_number_of_iteration))
+                result["list_best_tour"] = self.algorithm_thread.best_tours
+                result["list_best_len"] = self.algorithm_thread.best_lens
 
-                # Create log object
-                self.logging = Log(key=key, name=name, algorithm=algorithm, number_of_point=number_of_point,
-                                   created_date=created_date, parameter=parameter, dataset=dataset, result=result)
+            # Create log object
+            self.result_log = Log(key=key, name=name, algorithm=self.current_algorithm,
+                                  number_of_point=number_of_point, created_date=created_date,
+                                  parameter=parameter, dataset=dataset, result=result)
 
             self.algorithm_result.put(None)
-            #self.saveLog()
         except:
             traceback.print_exc()
 
@@ -426,32 +457,27 @@ class MainWindow(QWidget):
         if reply == QMessageBox.Yes:
             name, ok = QInputDialog.getText(self, 'Create Log', 'Log Name:')
             if ok:
-                if self.logging != None:
-                    self.logging.name = name
-                    self.log_io.addNewLog(self.logging)
-                    self.logging = None
+                if self.result_log != None:
+                    self.result_log.name = name
+                    self.log_io.addNewLog(self.result_log)
+                    self.result_log = None
 
     def enableSpinBox(self):
         #global Knum, checkK
-        if self.graphWP.antq_tab.checkK.isChecked() == True:
-            self.graphWP.antq_tab.Knum.setDisabled(False)
+        if self.graph_WP.antq_tab.checkK.isChecked() == True:
+            self.graph_WP.antq_tab.Knum.setDisabled(False)
         else:
-            self.graphWP.antq_tab.Knum.setDisabled(True)
+            self.graph_WP.antq_tab.Knum.setDisabled(True)
 
-    def reset_graph(self):
-        self.graphWP.best_length_chart.clearChart()
-        self.graphWP.mean_length_chart.clearChart()
-        self.graphWP.st_deviation_chart.clearChart()
-        self.logging = None
+    def resetGraph(self):
+        self.graph_WP.best_length_chart.clearChart()
+        self.graph_WP.mean_length_chart.clearChart()
+        self.graph_WP.st_deviation_chart.clearChart()
+        self.result_log = None
 
-    def reset_point(self):
-        self.list_point = []
-        self.list_address = []
-        self.dist_matrix = []
-
-    def run_google_map_log(self):
+    def runLogGoogleMap(self):
         try:
-            log_key = self.googleWP.log_panel.currentKey
+            log_key = self.google_map_WP.log_panel.currentKey
             self.google_map_selected_log = self.log_io.getLog(int(log_key))
             if len(self.google_map_selected_log.dataset["list_address"]) > 0:
                 #Get log parameter
@@ -489,16 +515,16 @@ class MainWindow(QWidget):
                     self.gmap.createRoute(cluster_point, best_tour[n], n)
 
                 # Show all cluster address
-                self.googleWP.showRouteAddress(list_address, clusters_point, best_tour, 0)
+                self.google_map_WP.showRouteAddress(list_address, clusters_point, best_tour, 0)
 
                 # Show parameter
-                self.googleWP.showAlgorithmParameter(parameter, algorithm)
+                self.google_map_WP.showAlgorithmParameter(parameter, algorithm)
 
                 #Add cluster number to combobox
-                self.googleWP.route_table.cluster_combobox.clear()
-                self.googleWP.route_table.cluster_combobox.addItem("All")
+                self.google_map_WP.route_table.cluster_combobox.clear()
+                self.google_map_WP.route_table.cluster_combobox.addItem("All")
                 for i in range(len(clusters_point)):
-                    self.googleWP.route_table.cluster_combobox.addItem("Cluster {}".format(i + 1))
+                    self.google_map_WP.route_table.cluster_combobox.addItem("Cluster {}".format(i + 1))
 
             else:
                 error = QMessageBox()
@@ -507,8 +533,7 @@ class MainWindow(QWidget):
             (type, value, traceback) = sys.exc_info()
             sys.excepthook(type, value, traceback)
 
-    def google_map_change_cluster(self, pos):
-        cluster_number = pos
+    def changeClusterGoogleMap(self, pos):
         if pos > 0:
             try:
                 cluster_index = pos - 1
@@ -542,54 +567,25 @@ class MainWindow(QWidget):
                 self.gmap.createRoute(cluster_point, best_tour[cluster_index], cluster_index)
 
                 # Show route address
-                self.googleWP.showRouteAddress(list_address, clusters_point, best_tour, pos)
+                self.google_map_WP.showRouteAddress(list_address, clusters_point, best_tour, pos)
             except:
                 traceback.print_exc()
 
-class OpenFileDialog(QWidget):
+class OpenTSPFileDialog(QWidget):
 
-    def __init__(self, listMarker, dist_matrix, numMarker, graph, gmap):
+    def __init__(self, visualize_graph = None):
         super().__init__()
-        self.title = 'PyQt5 file dialogs - pythonspot.com'
-        self.left = 10
-        self.top = 10
-        self.width = 640
-        self.height = 480
-        self.listMarker = listMarker
-        self.dist_matrix = dist_matrix
-        self.numMarker = numMarker
-        self.is_googlemap = False
+        self.setGeometry(10, 10, 640, 480)
+
+        self.list_point = []
         self.list_address = []
+        self.dist_matrix = []
+        self.is_googlemap = False
+        self.visualize_graph = visualize_graph
 
-        self.graph = graph
-        self.gmap = gmap
-        self.initUI()
+        self.openTSPFileDialog()
 
-    def initUI(self):
-        self.setWindowTitle(self.title)
-        self.setGeometry(self.left, self.top, self.width, self.height)
-        self.openAtspFileNameDialog()
-
-    def openFileNameDialog(self):
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        fileName, _ = QFileDialog.getOpenFileName(self, "Open File", "",
-                                                  "All Files (*);;Python Files (*.py)", options=options)
-        if fileName:
-            self.numMarker = 0
-            data = json.load(codecs.open(fileName, 'r', 'utf-8-sig'))
-            for coord in data:
-                self.numMarker += 1
-                marker = {"latitude": coord['latitude'], "longitude": coord['longitude']}
-                self.listMarker.append(marker)
-                self.gmap.addMarker(str(self.numMarker), marker['latitude'], marker['longitude'], **dict(
-                    title="Move me!"
-                ))
-                self.graph.add_coord((marker['latitude'],  marker['longitude']))
-
-            self.graph.draw_graph()
-
-    def openAtspFileNameDialog(self):
+    def openTSPFileDialog(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         fileName, _ = QFileDialog.getOpenFileName(self, "Open File", "",
@@ -598,51 +594,43 @@ class OpenFileDialog(QWidget):
         if fileName:
             try:
                 self.is_googlemap = False
-                # self.graph.points = []
-                self.graph.clearGraph()
+                self.visualize_graph.clearGraph()
                 if fileName.lower().endswith('.atsp'):
                     # Read atsp file
                     reader = ATSPReader(fileName.strip())
-                    self.listMarker = reader.cities_tups
-                    self.numMarker = len(self.listMarker)
-
+                    self.list_point = reader.cities_tups
                     self.dist_matrix = reader.dist_matrix
 
                     # Draw graph
-                    self.graph.initCoordData(self.listMarker)
+                    self.visualize_graph.initCoordData(self.list_point)
 
                 elif fileName.lower().endswith('.tsp'):
                     # Reader tsp file
                     reader = TSPFileReader(fileName.strip())
-                    self.listMarker = reader.cities_tups
-                    self.numMarker = len(self.listMarker)
+                    self.list_point = reader.cities_tups
                     self.dist_matrix = reader.dist_matrix
 
-                    self.graph.initCoordData(self.listMarker)
+                    self.visualize_graph.initCoordData(self.list_point)
 
                 elif fileName.lower().endswith('.json'):
                     self.is_googlemap = True
                     # Reader tsp file
                     reader = GMapDataReader(fileName.strip())
-                    self.listMarker = reader.cities_tups
-                    self.numMarker = len(self.listMarker)
+                    self.list_point = reader.cities_tups
                     self.dist_matrix = reader.dist_matrix
                     self.list_address = reader.list_address
                     # Draw graph
                     try:
-                        self.graph.initCoordData(self.listMarker)
+                        self.visualize_graph.initCoordData(self.list_point)
                     except:
                         traceback.print_exc()
-                if self.numMarker < 1:
+                if len(self.list_point) < 1:
                     qm = QMessageBox
                     qm.critical(self.parent(), "", "Wrong file!")
             except:
-                self.graph.clearGraph()
-                self.listMarker = []
-                self.numMarker = 0
+                self.visualize_graph.clearGraph()
+                self.list_point = []
                 self.dist_matrix = []
                 qm = QMessageBox
                 qm.critical(self.parent(), "", "Wrong file!")
-
-
 

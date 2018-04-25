@@ -10,7 +10,7 @@ from ui.log.log_managepanel import *
 
 import traceback
 
-class GoogleWP(QWidget):
+class GoogleMapWP(QWidget):
 
     def __init__(self):
         super().__init__()
@@ -96,7 +96,7 @@ class GoogleWP(QWidget):
             self.param_layout.addRow(QLabel("Number of cluster: "), QLabel(str(parameter["number_of_cluster"])))
             self.param_layout.addRow(QLabel("Number of iteration: "), QLabel(str(parameter["number_of_iteration"])))
             self.param_layout.addRow(QLabel("Number of agent: "), QLabel(str(parameter["number_of_agent"])))
-            self.param_layout.addRow(QLabel("Residual Coefficient: "), QLabel(str(parameter["residual_coefficient"])))
+            self.param_layout.addRow(QLabel("Residual coefficient: "), QLabel(str(parameter["residual_coefficient"])))
             self.param_layout.addRow(QLabel("Intensity: "), QLabel(str(parameter["intensity"])))
             self.param_layout.addRow(QLabel("Alpha: "), QLabel(str(parameter["alpha"])))
             self.param_layout.addRow(QLabel("Beta: "), QLabel(str(parameter["beta"])))
